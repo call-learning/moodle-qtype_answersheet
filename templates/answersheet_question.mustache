@@ -1,0 +1,119 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template qtype_answersheet/answersheet_question
+
+    The question to display
+
+    Example context (json):
+    {
+        "pdffiles": [{"url" : "http://documentfileurl"},{"url" : "http://documentfileurl2"}]
+        "audiofiles": [{"url" : "http://audiofileurl"},{"url" : "http://audiofileurl2"}]
+        "questions" : [
+            { "answers": [{"label":"A", "value":1, "selected": true}, {"label":"B", "value":2}, {"label":"C", "value":3}, {"label":"D", "id":4}], "feedback": "myfeedback", "id": "myfirstinputid"}
+            { "answers": [{"label":"A", "value":1}, {"label":"B", "value":2}, {"label":"C", "value":3}, {"label":"D", "id":4}], "feedback": "myfeedback", "id": "mysecondinputid"}
+        ]
+    }
+}}
+<div class="answersheet_question">
+    <div class="qtext">
+        {{{questiontext}}}
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="documentpdf">
+                {{#pdffiles}}
+                    <span>{{name}}</span>
+                    <object id="documentpdf-{{uniqid}}" data="{{url}}" type="application/pdf" width="100%" height="600">
+                        <param name="src" value="{{url}}"/>
+                    </object>
+                    {{#js}}
+                        require(['qtype_answersheet/maximise-document'], function(Maximise) {
+                        Maximise('documentpdf-{{uniqid}}');
+                        });
+                    {{/js}}
+                {{/pdffiles}}
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="d-flex flex-column">
+                {{#audiofiles}}
+                    <div class="d-flex flex-column">
+                        <div>{{name}}</div>
+                        <audio controls src="{{url}}"></audio>
+                    </div>
+                {{/audiofiles}}
+            </div>
+            <div class="pt-3">
+                <ul class="nav nav-tabs" id="tab-{{uniqid}}" role="tablist">
+                    {{#parts}}
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link {{#isactive}}active{{/isactive}}" id="p-{{partid}}-{{uniqid}}-tab" data-toggle="pill" href="#p-{{partid}}-{{uniqid}}" role="tab"
+                               aria-controls="p-{{partid}}-{{uniqid}}" aria-selected="{{#isactive}}true{{/isactive}}{{^isactive}}false{{/isactive}}">{{label}}</a>
+                        </li>
+                    {{/parts}}
+                </ul>
+                <div class="tab-content" id="tabcontent-{{uniqid}}">
+                    {{#parts}}
+                        <div class="tab-pane fade {{#isactive}}show active{{/isactive}}" id="p-{{partid}}-{{uniqid}}" role="tabpanel" aria-labelledby="{{partid}}-{{uniqid}}-tab">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr class="m-auto">
+                                    <th class="m-auto">#</th>
+                                    {{#possibleanswers}}
+                                        <th class="m-auto">{{.}}</th>
+                                    {{/possibleanswers}}
+                                    {{#feedback}}
+                                        <td class="m-auto">
+                                        </td>
+                                    {{/feedback}}
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {{#questions}}
+                                    <tr class="m-auto">
+                                        <td class="m-auto">
+                                            {{index}}.
+                                        </td>
+                                        {{#answers}}
+                                            <td class="m-auto">
+                                                <label class="label bg-transparent">
+                                                    <input class="input {{additionalclass}}" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}}>
+                                                    <span class="sr-only">{{label}}</span>
+                                                </label>
+                                                {{{feedbackimage}}}
+                                            </td>
+                                        {{/answers}}
+                                        {{#feedback}}
+                                            <td class="m-auto">
+                                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                            </td>
+                                        {{/feedback}}
+                                    </tr>
+                                {{/questions}}
+                                </tbody>
+                            </table>
+                        </div>
+                    {{/parts}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{#js}}
+    require(['jquery', 'theme_boost/bootstrap/popover'], function() {});
+{{/js}}
