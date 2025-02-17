@@ -1,0 +1,406 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template qtype_answersheet/answersheet
+
+    The answersheet to be rendered.
+
+    Example context (json):
+    {
+        "questionid": 1,
+        "cssurl": "http://example.com/customfield/sprogramme/styles.css",
+        "rowname": "Row 1",
+        "modules": [
+            {
+                "moduleid": 9,
+                "modulename": "Module",
+                "modulesortorder": 0,
+                "rows": [
+                    {
+                        "id": 126,
+                        "sortorder": 0,
+                        "cells": [
+                            {
+                                "column": "cct_ept",
+                                "value": "CCT",
+                                "type": "select",
+                                "visible": false
+                            },
+                            {
+                                "column": "dd_rse",
+                                "value": "DD/RSE",
+                                "type": "select",
+                                "visible": false
+                            },
+                            {
+                                "column": "type_ae",
+                                "value": "TD",
+                                "type": "select",
+                                "visible": false
+                            },
+                            {
+                                "column": "intitule_seance",
+                                "value": "Groupes et actions musculaires des membres",
+                                "type": "text",
+                                "visible": true
+                            },
+                            {
+                                "column": "cm",
+                                "value": "1,2",
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "td",
+                                "value": "5,7",
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "tp",
+                                "value": "9,2",
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "tpa",
+                                "value": null,
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "tc",
+                                "value": null,
+                                "type": "int",
+                                "visible": true
+                            },
+                            {
+                                "column": "aas",
+                                "value": null,
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "fmp",
+                                "value": null,
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "perso_av",
+                                "value": null,
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "perso_ap",
+                                "value": null,
+                                "type": "float",
+                                "visible": true
+                            },
+                            {
+                                "column": "consignes",
+                                "value": "Lecture du polycopie",
+                                "type": "text",
+                                "visible": true
+                            },
+                            {
+                                "column": "Dessins, diaporama",
+                                "value": "",
+                                "type": "text",
+                                "visible": true
+                            }
+                        ]
+                    }
+                ],
+                "columns": [
+                    {
+                    "column": "cct_ept",
+                    "type": "select",
+                    "select": true,
+                    "visible": false,
+                    "label": "CCT / EPT",
+                    "columnid": 6,
+                    "length": 20,
+                    "field": "float",
+                    "sample_value": "",
+                    "options": [
+                        {
+                        "name": "Autre",
+                        "selected": false
+                        },
+                        {
+                        "name": "CCT",
+                        "selected": false
+                        },
+                        {
+                        "name": "EPT",
+                        "selected": false
+                        }
+                    ]
+                    },
+                    {
+                    "column": "dd_rse",
+                    "type": "select",
+                    "select": true,
+                    "visible": false,
+                    "label": "DD / RSE",
+                    "columnid": 7,
+                    "length": 20,
+                    "field": "float",
+                    "sample_value": "",
+                    "options": [
+                        {
+                        "name": "Autre",
+                        "selected": false
+                        },
+                        {
+                        "name": "Sans lien avec DD/RSE",
+                        "selected": false
+                        },
+                        {
+                        "name": "DD/RSE",
+                        "selected": false
+                        }
+                    ]
+                    },
+                    {
+                    "column": "type_ae",
+                    "type": "select",
+                    "select": true,
+                    "visible": false,
+                    "label": "Type AEEEV",
+                    "columnid": 8,
+                    "length": 10,
+                    "field": "select",
+                    "sample_value": "TC",
+                    "options": [
+                        {
+                        "name": "CM",
+                        "selected": false
+                        },
+                        {
+                        "name": "TD",
+                        "selected": false
+                        },
+                        {
+                        "name": "TP",
+                        "selected": false
+                        },
+                        {
+                        "name": "TPa",
+                        "selected": false
+                        },
+                        {
+                        "name": "TC",
+                        "selected": false
+                        },
+                        {
+                        "name": "AAS",
+                        "selected": false
+                        },
+                        {
+                        "name": "FMP",
+                        "selected": false
+                        }
+                    ]
+                    },
+                    {
+                    "column": "intitule_seance",
+                    "type": "text",
+                    "text": true,
+                    "visible": true,
+                    "label": "Intitulé de la séance / de l’exercice",
+                    "columnid": 19,
+                    "length": 255,
+                    "field": "text",
+                    "sample_value": "..."
+                    },
+                    {
+                    "column": "cm",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "CM",
+                    "columnid": 20,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "td",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "TD",
+                    "columnid": 21,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "tp",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "TP",
+                    "columnid": 22,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "tpa",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "TPa",
+                    "columnid": 23,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "tc",
+                    "type": "int",
+                    "int": true,
+                    "visible": true,
+                    "label": "TC",
+                    "columnid": 24,
+                    "length": 10,
+                    "field": "int",
+                    "sample_value": "0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "aas",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "AAS",
+                    "columnid": 25,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "fmp",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "FMP",
+                    "columnid": 26,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "perso_av",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "Perso av",
+                    "columnid": 27,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0"
+                    },
+                    {
+                    "column": "perso_ap",
+                    "type": "float",
+                    "float": true,
+                    "visible": true,
+                    "label": "Perso ap",
+                    "columnid": 28,
+                    "length": 10,
+                    "field": "float",
+                    "sample_value": "0,0",
+                    "min": 0,
+                    "max": 99
+                    },
+                    {
+                    "column": "consignes",
+                    "type": "text",
+                    "text": true,
+                    "visible": true,
+                    "label": "Consignes de travail pour préparer la séance",
+                    "columnid": 29,
+                    "length": 10,
+                    "field": "select",
+                    "sample_value": "..."
+                    },
+                    {
+                    "column": "supports",
+                    "type": "text",
+                    "text": true,
+                    "visible": true,
+                    "label": "Supports pédagogiques essentiels",
+                    "columnid": 30,
+                    "length": 10,
+                    "field": "select",
+                    "sample_value": "..."
+                    }
+                ]
+            }
+        ]
+    }
+}}
+<link rel="stylesheet" type="text/css" href="{{{cssurl}}}">
+
+<div class="answersheet">
+    <div class="saveconfirm icon-no-margin">
+        <button class="btn btn-icon" data-action="saveconfirm">
+            <span class="defaulticon">{{#pix}}e/save, core, {{#str}}save{{/str}}{{/pix}}</span>
+            <span class="savingicon">{{#pix}}i/loading, core, {{#str}}saving, qtype_answersheet{{/str}}{{/pix}}</span>
+        </button>
+    </div>
+    <div class="my-5 d-none" data-region="modules">
+        {{> qtype_answersheet/table/modules}}
+    </div>
+</div>
+<a href="" class="d-none btn btn-primary" data-action="editprogramme">Edit programme</a>
+<div class="answersheet" data-region="app">
+    <div data-region="modules">
+    </div>
+</div>
+{{#debug}}
+    <div class="d-flex pt-5 d-none">
+        <a href="#" data-toggle="collapse" data-target="#debugc">Debug</a>
+        <div id="debugc" class="collapse">
+            <pre id="debug">{{{debug}}}</pre>
+        </div>
+    </div>
+{{/debug}}
+{{#js}}
+require(['qtype_answersheet/local/manager'], function(manager) {
+    const element = document.querySelector('[data-action="editprogramme"]');
+    manager.init(element, {{questionid}});
+});
+{{/js}}

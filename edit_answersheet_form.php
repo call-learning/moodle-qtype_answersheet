@@ -25,6 +25,8 @@
 use qtype_answersheet\answersheet_docs;
 use qtype_answersheet\answersheet_parts;
 use qtype_answersheet\utils;
+use qtype_answersheet\output\answersheet;
+use qtype_answersheet\output\sheet_renderer;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -51,6 +53,7 @@ class qtype_answersheet_edit_form extends question_edit_form {
      * @param MoodleQuickForm $mform the form being built.
      */
     protected function definition_inner($mform) {
+        global $PAGE, $OUTPUT;
         $this->add_documents_fields();
 
         $mform->addElement('text', 'startnumbering',
@@ -59,10 +62,21 @@ class qtype_answersheet_edit_form extends question_edit_form {
 
         $this->add_parts_fields();
 
-        raise_memory_limit(MEMORY_EXTRA);
-        $this->add_per_answer_fields($mform, get_string('answer', 'qtype_answersheet', '{no}'),
-            question_bank::fraction_options_full(), utils::BASE_ANSWER_COUNT, utils::BASE_ANSWER_COUNT);
-        raise_memory_limit(MEMORY_STANDARD);
+        // raise_memory_limit(MEMORY_EXTRA);
+        // $this->add_per_answer_fields($mform, get_string('answer', 'qtype_answersheet', '{no}'),
+        //     question_bank::fraction_options_full(), utils::BASE_ANSWER_COUNT, utils::BASE_ANSWER_COUNT);
+        // raise_memory_limit(MEMORY_STANDARD);
+
+        $id = optional_param('id', 0, PARAM_INT);
+        $mform->addElement('header', 'answerhdr',
+        get_string('answers', 'question'), '');
+        $mform->setExpanded('answerhdr', 1);
+        $renderer = new sheet_renderer($PAGE, $OUTPUT);
+        $programm = new answersheet($id);
+        $mform->addElement('hidden', 'newquestion', '');
+        $mform->setType('newquestion', PARAM_TEXT);
+        $mform->addElement('html', $renderer->render($programm));
+
 
         $this->add_combined_feedback_fields(true);
         $mform->disabledIf('shownumcorrect', 'single', 'eq', 1);
@@ -194,6 +208,37 @@ class qtype_answersheet_edit_form extends question_edit_form {
     }
 
     /**
+     * Add a set of form fields, obtained from get_per_answer_fields, to the form,
+     * one for each existing answer, with some blanks for some new ones.
+     * @param object $mform the form being built.
+     * @param $label the label to use for each option.
+     * @param $gradeoptions the possible grades for each answer.
+     * @param $minoptions the minimum number of answer blanks to display.
+     *      Default QUESTION_NUMANS_START.
+     * @param $addoptions the number of answer blanks to add. Default QUESTION_NUMANS_ADD.
+     */
+    protected function add_per_answer_fields(&$mform, $label, $gradeoptions,
+            $minoptions = QUESTION_NUMANS_START, $addoptions = QUESTION_NUMANS_ADD) {
+        $mform->addElement('header', 'answerhdr',
+                get_string('answers', 'question'), '');
+        $mform->setExpanded('answerhdr', 1);
+        $answersoption = '';
+        $repeatedoptions = array();
+        $repeated = $this->get_per_answer_fields_custom($mform, $label, $gradeoptions, 5,
+                $repeatedoptions, $answersoption);
+
+        if (isset($this->question->options)) {
+            $repeatsatstart = count($this->question->options->$answersoption);
+        } else {
+            $repeatsatstart = $minoptions;
+        }
+
+         $this->repeat_elements($repeated, $repeatsatstart, $repeatedoptions,
+                'noanswers', 'addanswers', $addoptions,
+                $this->get_more_choices_string(), true);
+    }
+
+    /**
      * Get a single row of answers
      *
      * @param MoodleQuickForm $mform
@@ -211,7 +256,44 @@ class qtype_answersheet_edit_form extends question_edit_form {
         // Answer 'answer' is a key in saving the question (see {@link save_question_answers()}).
         // Same for feedback.
         for ($i = 1; $i <= utils::OPTION_COUNT; $i++) {
-            $radioarray[] = $mform->createElement('radio', 'answer', '', get_string('option:' . $i, 'qtype_answersheet'), $i);
+            $radioarray[] = $mform->createElement('radio', 'answer', '', get_string('option', 'qtype_answersheet', $i), $i);
+        }
+        $repeated[] =
+            $mform->createElement('group', 'answergroup', get_string('answer', 'qtype_answersheet'), $radioarray, array(' '),
+                false);
+        $repeated[] = $mform->createElement('hidden', 'fraction');
+        $repeated[] = $mform->createElement('text', 'feedback',
+            get_string('feedback', 'question'), array('rows' => 1), $this->editoroptions);
+        $repeatedoptions['answer']['type'] = PARAM_RAW;
+        $repeatedoptions['feedback']['type'] = PARAM_TEXT;
+        $repeatedoptions['fraction']['default'] = 0;
+        $repeatedoptions['fraction']['type'] = PARAM_INT;
+        $answersoption = 'answers';
+        return $repeated;
+    }
+
+        /**
+     * Get a single row of answers
+     *
+     * @param MoodleQuickForm $mform
+     * @param string $label
+     * @param mixed $gradeoptions
+     * @param mixed $repeatedoptions
+     * @param int $numradios
+     * @param mixed $answersoption
+     * @return array
+     * @throws coding_exception
+     */
+    protected function get_per_answer_fields_custom($mform, $label, $gradeoptions, $numradios,
+        &$repeatedoptions, &$answersoption) {
+        $repeated = array();
+        $radioarray = array();
+        // Answer 'answer' is a key in saving the question (see {@link save_question_answers()}).
+        // Same for feedback.
+        for ($i = 1; $i <= $numradios; $i++) {
+            // Get the alpabetical letter for the option based on the index.
+            $letter = chr(64 + $i);
+            $radioarray[] = $mform->createElement('radio', 'answer', '', get_string('option', 'qtype_answersheet', $letter), $i);
         }
         $repeated[] =
             $mform->createElement('group', 'answergroup', get_string('answer', 'qtype_answersheet'), $radioarray, array(' '),

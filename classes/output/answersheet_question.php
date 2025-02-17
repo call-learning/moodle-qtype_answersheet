@@ -27,6 +27,9 @@ namespace qtype_answersheet\output;
 use moodle_url;
 use qtype_answersheet\answersheet_docs;
 use qtype_answersheet\answersheet_parts;
+use qtype_answersheet\local\persistent\answersheet_module;
+use qtype_answersheet\local\persistent\answersheet_answers;
+use qtype_answersheet\local\api\answersheet as answersheet_api;
 use qtype_answersheet\utils;
 use question_attempt;
 use question_display_options;
@@ -92,7 +95,7 @@ class answersheet_question implements renderable, templatable {
         $data->pdffiles = $this->get_document_info('document');
         $possibleanswers = [];
         for ($i = 1; $i <= utils::OPTION_COUNT; $i++) {
-            $possibleanswers[] = get_string('option:' . $i, 'qtype_answersheet');
+            $possibleanswers[] = get_string('option', 'qtype_answersheet', $i);
         }
         $questionstartnum = $question->startnumbering;
 
@@ -134,7 +137,7 @@ class answersheet_question implements renderable, templatable {
             $iscorrect = false;
             for ($i = 1; $i <= utils::OPTION_COUNT; $i++) {
                 $ananswer = new stdClass();
-                $ananswer->label = get_string('option:' . $i, 'qtype_answersheet');
+                $ananswer->label = get_string('option', 'qtype_answersheet', $i);
                 $ananswer->value = $i;
                 if ($response == $i) {
                     $ananswer->selected = true;
@@ -158,7 +161,96 @@ class answersheet_question implements renderable, templatable {
             }
             $lastindex++;
         }
+
+        // return $data;
+        $data->questionid = $question->id;
+        $data->modules = $this->processmodules($question->id);
+        $uniquenumber = uniqid();
+        $data->cssurl = new moodle_url('/question/type/answersheet/scss/styles.css', ['v' => $uniquenumber ]);
         return $data;
+    }
+
+    private function processmodules(int $questionid): array {
+        $data = answersheet_api::get_data($questionid);
+        $newdata = [];
+        //$newdata['questionid'] = $questionid;
+        foreach ($data as $module) {
+            $newmodule = [
+                'moduleid' => $module['moduleid'],
+                'modulename' => $module['modulename'],
+                'questions' => [],
+                'columns' => $module['columns'],
+                'colspan' => $module['numoptions'] + 1,
+            ];
+            $type = answersheet_module::TYPES[$module['type']];
+            $newmodule[$type] = true;
+            if ($module['type'] == answersheet_module::RADIO_CHECKED) {
+                // The possible answers are and array of A B C D etc values, length is defined by numoptions.
+                $newmodule['possibleanswers'] = array_map(function($index) {
+                    return chr(65 + $index);
+                }, range(0, $module['numoptions'] - 1));
+            }
+            foreach ($module['rows'] as $row) {
+                $newquestion = [
+                    'id' => $this->qa->get_qt_field_name('answer' . $row['answerid']),
+                    'response' => $this->qa->get_last_qt_var('answer' . $row['answerid'], ''),
+                    'answers' => [],
+                ];
+                foreach ($row['cells'] as $cell) {
+                    $newquestion[$cell['column']] = $cell['value'];
+                }
+                if ($module['type'] == answersheet_module::RADIO_CHECKED) {
+                    $newquestion['correctanswer'] = ord($newquestion['options']) - 64;
+                    $newquestion['answers'] = array_map(function($index) use ($newquestion) {
+                        $answer = [
+                            'label' => chr(65 + $index),
+                            'value' => $index + 1,
+                        ];
+                        if ($newquestion['response'] == $index + 1) {
+                            $answer['selected'] = true;
+                            if ($this->options->correctness) {
+                                $iscorrect = ($newquestion['response'] == $newquestion['correctanswer']) ? 1 : 0;
+                                $answer['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
+                            }
+                        }
+
+                        return $answer;
+                    }, range(0, $module['numoptions'] - 1));
+                }
+                if ($module['type'] == answersheet_module::FREE_TEXT) {
+                    $newquestion['correctanswer'] = $newquestion['answer'];
+                    if ($this->options->correctness) {
+                        $iscorrect = ($newquestion['response'] == $newquestion['correctanswer']) ? 1 : 0;
+                        $newquestion['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
+                        $newquestion['showanswer'] = true;
+                    }
+                }
+                if ($module['type'] == answersheet_module::LETTER_BY_LETTER) {
+                    $newquestion['correctanswer'] = $newquestion['answer'];
+                    $newquestion['answers'] = array_map(function($index) use ($newquestion) {
+                        if ($index >= strlen($newquestion['correctanswer'])) {
+                            return [
+                                'label' => '',
+                                'index' => $index + 1,
+                            ];
+                        }
+                        $answer = [
+                            'label' => $newquestion['answer'][$index],
+                            'index' => $index + 1,
+                        ];
+                        return $answer;
+                    }, range(0, $module['numoptions'] - 1));
+                    if ($this->options->correctness) {
+                        $iscorrect = ($newquestion['response'] == $newquestion['correctanswer']) ? 1 : 0;
+                        $newquestion['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
+                        $newquestion['showanswer'] = true;
+                    }
+                }
+                $newmodule['questions'][] = $newquestion;
+            }
+            $newdata[] = $newmodule;
+        }
+        return $newdata;
     }
 
     /**

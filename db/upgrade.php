@@ -116,5 +116,106 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2021082404, 'qtype', 'answersheet');
     }
 
+    if ($oldversion < 2025020300) {
+
+        // Define table qtype_answersheet_answers to be created.
+        $table = new xmldb_table('qtype_answersheet_answers');
+
+        // Adding fields to table qtype_answersheet_answers.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('moduleid', XMLDB_TYPE_INTEGER, '20', null, null, null, null);
+        $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '254', null, null, null, null);
+        $table->add_field('options', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('answer', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('feedback', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table qtype_answersheet_answers.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('usermodified', XMLDB_KEY_FOREIGN, ['usermodified'], 'user', ['id']);
+
+        // Conditionally launch create table for qtype_answersheet_answers.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Define table qtype_answersheet_module to be created.
+        $table = new xmldb_table('qtype_answersheet_module');
+
+        // Adding fields to table qtype_answersheet_module.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '254', null, null, null, null);
+        $table->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table qtype_answersheet_module.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('usermodified', XMLDB_KEY_FOREIGN, ['usermodified'], 'user', ['id']);
+
+        // Conditionally launch create table for qtype_answersheet_module.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Answersheet savepoint reached.
+        upgrade_plugin_savepoint(true, 2025020300, 'qtype', 'answersheet');
+    }
+
+    if ($oldversion < 2025020400) {
+
+        // Define field startnumbering to be added to qtype_answersheet.
+        $table = new xmldb_table('qtype_answersheet_answers');
+
+        $field = new xmldb_field('numoptions', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'name');
+        // Conditionally launch add field startnumbering.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Multichoicegrid savepoint reached.
+        upgrade_plugin_savepoint(true, 2025020400, 'qtype', 'answersheet');
+    }
+
+    if ($oldversion < 2025020460) {
+
+        // Define field startnumbering to be added to qtype_answersheet.
+        $table = new xmldb_table('qtype_answersheet_module');
+
+        $field = new xmldb_field('numoptions', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'name');
+        // Conditionally launch add field startnumbering.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        $field = new xmldb_field('type', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'numoptions');
+        // Conditionally launch add field startnumbering.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        // Multichoicegrid savepoint reached.
+        upgrade_plugin_savepoint(true, 2025020600, 'qtype', 'answersheet');
+    }
+
+    if ($oldversion < 2025020601) {
+
+        // Define field startnumbering to be added to qtype_answersheet.
+        $table = new xmldb_table('qtype_answersheet_answers');
+
+        $field = new xmldb_field('answerid', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'id');
+        // Conditionally launch add field startnumbering.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        // Multichoicegrid savepoint reached.
+        upgrade_plugin_savepoint(true, 2025020601, 'qtype', 'answersheet');
+    }
+
+
     return true;
 }

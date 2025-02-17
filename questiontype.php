@@ -25,6 +25,10 @@
 use qtype_answersheet\answersheet_docs;
 use qtype_answersheet\answersheet_parts;
 use qtype_answersheet\utils;
+use qtype_answersheet\local\persistent\answersheet_answers;
+use qtype_answersheet\local\persistent\answersheet_module;
+use qtype_answersheet\local\api\answersheet as answersheet_api;
+
 
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
@@ -51,6 +55,51 @@ class qtype_answersheet extends question_type {
     public function save_question_options($question) {
         // The feedback are supposed to be editor, but to speed up the page rendering, we will use plain
         // text fields. This means we will need to create mock editor structure.
+
+        $formjsondata = json_decode($question->newquestion, true);
+        if (!empty($formjsondata)) {
+            answersheet_api::set_records($question->id, $formjsondata);
+        }
+        $modules = answersheet_api::get_data($question->id);
+        $answers = answersheet_answers::get_all_records_for_question($question->id);
+        if (empty($answers)) {
+            $modules = answersheet_api::get_data($question->oldparent);
+            $answers = answersheet_answers::get_all_records_for_question($question->oldparent);
+        }
+        $newanswers = [];
+        foreach ($modules as $module) {
+            $type = answersheet_module::TYPES[$module['type']];
+            foreach ($module['rows'] as $row) {
+                $newquestion = [];
+                $newquestion['id'] = $row['id'];
+                foreach ($row['cells'] as $cell) {
+                    $newquestion[$cell['column']] = $cell['value'];
+                }
+                if ($type == 'radiochecked') {
+                    $value = ord($newquestion['options']) - 64;
+                    $newquestion['value'] = $value;
+                } else if ($type == 'letterbyletter' || $type == 'freetext') {
+                    $newquestion['value'] = $newquestion['answer'];
+                }
+                $newanswers[] = $newquestion;
+            }
+        }
+        foreach ($newanswers as $answer) {
+            $question->answer[] = $answer['value'];
+            $question->answersheetanswer[] = $answer['id'];
+            $question->fraction[] = 0;
+            $question->feedback[] = $answer['feedback'];
+        }
+        // foreach ($answers as $answer) {
+        //     $value = $answer->get('options');
+        //     // Change the A, B, C into 1, 2, 3.
+        //     $value = ord($value) - 64;
+        //     $feedback = $answer->get('feedback');
+        //     $question->answer[] = $value;
+        //     $question->answersheetanswer[] = $answer->get('id');
+        //     $question->fraction[] = 0;
+        //     $question->feedback[] = $feedback;
+        // }
         foreach ($question->feedback as $key => $feedbacktext) {
             $feedbacks[] = [
                 'format' => FORMAT_PLAIN,
@@ -195,18 +244,119 @@ class qtype_answersheet extends question_type {
      * @param object $question
      */
     protected function save_parts($question) {
+
         if ($question->id) {
             global $DB;
             // First delete all existing parts for this question.
             $DB->delete_records(answersheet_parts::TABLE, array('questionid' => $question->id));
-            foreach ($question->parts as $index => $partdef) {
+            $modules = answersheet_api::get_data(1000);
+            $start = 0;
+            foreach ($modules as $mod) {
                 $part = new stdClass();
                 $part->questionid = $question->id;
-                $part->start = $partdef['partstart'];
-                $part->name = $partdef['partname'];
+                $part->start = $start;
+                $part->name = $mod['modulename'];
+                $start = count($mod['rows']);
                 $questionpart = new answersheet_parts(0, $part);
                 $questionpart->create();
             }
+        }
+    }
+
+    /**
+     * Save the answers, with any extra data.
+     *
+     * Questions that use answers will call it from {@link save_question_options()}.
+     * @param object $question  This holds the information from the editing form,
+     *      it is not a standard question object.
+     * @return object $result->error or $result->notice
+     */
+    public function save_question_answers($question) {
+        global $DB;
+
+        $context = $question->context;
+        $oldanswers = $DB->get_records('question_answers',
+                array('question' => $question->id), 'id ASC');
+
+        // We need separate arrays for answers and extra answer data, so no JOINS there.
+        $extraanswerfields = $this->extra_answer_fields();
+        $isextraanswerfields = is_array($extraanswerfields);
+        $extraanswertable = '';
+        $oldanswerextras = array();
+        if ($isextraanswerfields) {
+            $extraanswertable = array_shift($extraanswerfields);
+            if (!empty($oldanswers)) {
+                $oldanswerextras = $DB->get_records_sql("SELECT * FROM {{$extraanswertable}} WHERE " .
+                    'answerid IN (SELECT id FROM {question_answers} WHERE question = ' . $question->id . ')' );
+            }
+        }
+
+        // Insert all the new answers.
+        foreach ($question->answer as $key => $answerdata) {
+            // Check for, and ignore, completely blank answer from the form.
+            if ($this->is_answer_empty($question, $key)) {
+                continue;
+            }
+
+            // Update an existing answer if possible.
+            $answer = array_shift($oldanswers);
+            if (!$answer) {
+                $answer = new stdClass();
+                $answer->question = $question->id;
+                $answer->answer = '';
+                $answer->feedback = '';
+                $answer->id = $DB->insert_record('question_answers', $answer);
+            }
+
+            $answer = $this->fill_answer_fields($answer, $question, $key, $context);
+            $DB->update_record('question_answers', $answer);
+            $answersheetanswerid = $question->answersheetanswer[$key];
+            $answersheetanswer = answersheet_answers::get_record(['id' => $answersheetanswerid]);
+            $answersheetanswer->set('answerid', $answer->id);
+            $answersheetanswer->set('questionid', $question->id);
+            $answersheetanswer->save();
+            $moduleid = $answersheetanswer->get('moduleid');
+            $module = answersheet_module::get_record(['id' => $moduleid]);
+            $module->set('questionid', $question->id);
+            $module->save();
+
+            if ($isextraanswerfields) {
+                // Check, if this answer contains some extra field data.
+                if ($this->is_extra_answer_fields_empty($question, $key)) {
+                    continue;
+                }
+
+                $answerextra = array_shift($oldanswerextras);
+                if (!$answerextra) {
+                    $answerextra = new stdClass();
+                    $answerextra->answerid = $answer->id;
+                    // Avoid looking for correct default for any possible DB field type
+                    // by setting real values.
+                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
+                    $answerextra->id = $DB->insert_record($extraanswertable, $answerextra);
+                } else {
+                    // Update answerid, as record may be reused from another answer.
+                    $answerextra->answerid = $answer->id;
+                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
+                    $DB->update_record($extraanswertable, $answerextra);
+                }
+            }
+        }
+
+        if ($isextraanswerfields) {
+            // Delete any left over extra answer fields records.
+            $oldanswerextraids = array();
+            foreach ($oldanswerextras as $oldextra) {
+                $oldanswerextraids[] = $oldextra->id;
+            }
+            $DB->delete_records_list($extraanswertable, 'id', $oldanswerextraids);
+        }
+
+        // Delete any left over old answer records.
+        $fs = get_file_storage();
+        foreach ($oldanswers as $oldanswer) {
+            $fs->delete_area_files($context->id, 'question', 'answerfeedback', $oldanswer->id);
+            $DB->delete_records('question_answers', array('id' => $oldanswer->id));
         }
     }
 }

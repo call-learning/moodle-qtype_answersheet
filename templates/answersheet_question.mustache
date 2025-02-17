@@ -29,12 +29,13 @@
         ]
     }
 }}
-<div class="answersheet_question">
+<link rel="stylesheet" type="text/css" href="{{{cssurl}}}">
+<div class="answersheet_question" data-region="answersheet_question" data-questionid="{{questionid}}">
     <div class="qtext">
         {{{questiontext}}}
     </div>
     <div class="row">
-        <div class="col">
+        <div class="col d-none">
             <div class="documentpdf">
                 {{#pdffiles}}
                     <span>{{name}}</span>
@@ -49,7 +50,7 @@
                 {{/pdffiles}}
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-12">
             <div class="d-flex flex-column">
                 {{#audiofiles}}
                     <div class="d-flex flex-column">
@@ -58,62 +59,118 @@
                     </div>
                 {{/audiofiles}}
             </div>
-            <div class="pt-3">
-                <ul class="nav nav-tabs" id="tab-{{uniqid}}" role="tablist">
-                    {{#parts}}
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link {{#isactive}}active{{/isactive}}" id="p-{{partid}}-{{uniqid}}-tab" data-toggle="pill" href="#p-{{partid}}-{{uniqid}}" role="tab"
-                               aria-controls="p-{{partid}}-{{uniqid}}" aria-selected="{{#isactive}}true{{/isactive}}{{^isactive}}false{{/isactive}}">{{label}}</a>
-                        </li>
-                    {{/parts}}
-                </ul>
-                <div class="tab-content" id="tabcontent-{{uniqid}}">
-                    {{#parts}}
-                        <div class="tab-pane fade {{#isactive}}show active{{/isactive}}" id="p-{{partid}}-{{uniqid}}" role="tabpanel" aria-labelledby="{{partid}}-{{uniqid}}-tab">
-                            <table class="table table-striped">
-                                <thead>
-                                <tr class="m-auto">
-                                    <th class="m-auto">#</th>
-                                    {{#possibleanswers}}
-                                        <th class="m-auto">{{.}}</th>
-                                    {{/possibleanswers}}
-                                    {{#feedback}}
-                                        <td class="m-auto">
-                                        </td>
-                                    {{/feedback}}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {{#questions}}
-                                    <tr class="m-auto">
-                                        <td class="m-auto">
-                                            {{index}}.
-                                        </td>
-                                        {{#answers}}
-                                            <td class="m-auto">
-                                                <label class="label bg-transparent">
-                                                    <input class="input {{additionalclass}}" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}}>
-                                                    <span class="sr-only">{{label}}</span>
-                                                </label>
-                                                {{{feedbackimage}}}
-                                            </td>
-                                        {{/answers}}
-                                        {{#feedback}}
-                                            <td class="m-auto">
-                                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
-                                            </td>
-                                        {{/feedback}}
-                                    </tr>
-                                {{/questions}}
-                                </tbody>
-                            </table>
-                        </div>
-                    {{/parts}}
-                </div>
-            </div>
+
+            {{#modules}}
+                {{#radiochecked}}
+                    <table class="table table-bordered table-questions radiochecked">
+                        <thead>
+                            <tr>
+                                <th class="fixedwidth-100"></th>
+                                <th class="modulename" colspan="{{{colspan}}}">
+                                    {{{modulename}}}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {{#questions}}
+                            <tr>
+                                <td class="questionname">
+                                    <strong>{{{name}}}</strong>
+                                </td>
+                                {{#answers}}
+                                    <td class="fixedwidth-100 {{additionalclass}}">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <strong>{{label}}</strong>
+                                            <input class="input" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}}>
+                                        </div>
+                                        {{{feedbackimage}}}
+                                    </td>
+                                {{/answers}}
+                                {{#feedback}}
+                                    <td>
+                                        <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                    </td>
+                                {{/feedback}}
+                            </tr>
+                        {{/questions}}
+                        </tbody>
+                    </table>
+                {{/radiochecked}}
+
+                {{#freetext}}
+                    <table class="table table-bordered table-questions freetext">
+                        <thead>
+                            <tr>
+                                <th class="fixedwidth-100"></th>
+                                <th class="modulename">
+                                    {{{modulename}}}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {{#questions}}
+                            <tr>
+                                <td class="questionname">
+                                    <strong>{{{name}}}</strong>
+                                </td>
+                                <td class="{{additionalclass}}">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <input class="input form-control text-500" type="text" value="{{response}}" name="{{id}}">
+                                    </div>
+                                </td>
+                                {{#feedback}}
+                                    <td>
+                                        <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                    </td>
+                                {{/feedback}}
+                            </tr>
+                        {{/questions}}
+                        </tbody>
+                    </table>
+                {{/freetext}}
+
+                {{#letterbyletter}}
+                    <table class="table table-bordered table-questions letterbyletter">
+                        <thead>
+                            <tr>
+                            <th class="fixedwidth-100"></th>
+                                <th class="modulename" colspan="{{{colspan}}}">
+                                    {{{modulename}}}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {{#questions}}
+                            <tr data-region="letterbyletterquestion">
+                                <td class="questionname">
+                                    <strong>{{{name}}}</strong>
+                                    <input type="hidden" name="{{id}}" data-region="hiddeninput" data-id="{{id}}" value="{{response}}">
+                                </td>
+                                {{#answers}}
+                                    <td class="fixedwidth-100 {{additionalclass}}">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <input class="input letterinput" type="text" data-region="letterinput" data-index="{{index}}">
+                                        </div>
+                                        {{{feedbackimage}}}
+                                    </td>
+                                {{/answers}}
+                                {{#feedback}}
+                                    <td>
+                                        <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                    </td>
+                                {{/feedback}}
+                            </tr>
+                        {{/questions}}
+                        </tbody>
+                    </table>
+                {{/letterbyletter}}
+            {{/modules}}
         </div>
     </div>
 </div>
 {{#js}}
-    require(['jquery', 'theme_boost/bootstrap/popover'], function() {});
+require(['qtype_answersheet/local/questions'], function(questions) {
+    const element = document.querySelector('[data-region="answersheet_question"]');
+    questions.init(element, {{questionid}});
+});
 {{/js}}

@@ -47,7 +47,7 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function get_expected_data() {
         $data = [];
         foreach (array_keys($this->answers) as $key) {
-            $data['answer' . $key] = PARAM_INT;
+            $data['answer' . $key] = PARAM_RAW_TRIMMED;
         }
         return $data;
     }
@@ -156,7 +156,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $answertypetext = get_string('option:' . $currentresponse, 'qtype_answersheet');
+            $answertypetext = get_string('option', 'qtype_answersheet', $currentresponse);
             $textresponses[] = "{$index} -> $answertypetext";
             $index++;
         }
