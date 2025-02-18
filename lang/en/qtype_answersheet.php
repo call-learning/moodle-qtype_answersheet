@@ -52,10 +52,6 @@ $string['option:3'] = 'C';
 $string['option:4'] = 'D';
 $string['option'] = '{$a}';
 $string['startnumbering'] = 'Start numbering';
-$string['partsheader'] = 'Parts';
-$string['parts'] = 'Parts {no}';
-$string['partstart'] = 'Index from';
-$string['partname'] = 'Part name';
 
 $string['row'] = 'Row {$a}';
 $string['save'] = 'Save';

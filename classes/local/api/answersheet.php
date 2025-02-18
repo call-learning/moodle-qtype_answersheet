@@ -17,7 +17,6 @@
 namespace qtype_answersheet\local\api;
 
 use qtype_answersheet\local\persistent\answersheet_answers;
-use qtype_answersheet\local\persistent\answersheet_disc;
 use qtype_answersheet\local\persistent\answersheet_module;
 use xmldb_structure;
 /**

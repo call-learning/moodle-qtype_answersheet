@@ -26,7 +26,6 @@ namespace qtype_answersheet\output;
 
 use moodle_url;
 use qtype_answersheet\answersheet_docs;
-use qtype_answersheet\answersheet_parts;
 use qtype_answersheet\local\persistent\answersheet_module;
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\api\answersheet as answersheet_api;
@@ -93,75 +92,6 @@ class answersheet_question implements renderable, templatable {
         $data->questiontext = $question->questiontext;
         $data->audiofiles = $this->get_document_info('audio');
         $data->pdffiles = $this->get_document_info('document');
-        $possibleanswers = [];
-        for ($i = 1; $i <= utils::OPTION_COUNT; $i++) {
-            $possibleanswers[] = get_string('option', 'qtype_answersheet', $i);
-        }
-        $questionstartnum = $question->startnumbering;
-
-        $parts = answersheet_parts::get_records(['questionid' => $question->id], 'start', 'ASC');
-        $data->parts = [];
-        if ($parts) {
-            foreach (array_values($parts) as $index => $part) {
-                $data->parts[] = (object) [
-                    'partid' => $part->get('id'),
-                    'label' => $part->get('name'),
-                    'questions' => [],
-                    'possibleanswers' => $possibleanswers,
-                    'isactive' => $index > 0 ? false : true
-                ];
-            }
-        } else {
-            $data->parts[] = (object) [
-                'partid' => 0,
-                'label' => '',
-                'questions' => [],
-                'possibleanswers' => $possibleanswers,
-                'isactive' => true
-            ];
-        }
-        $lastindex = 1;
-        if (!empty($parts)) {
-            array_shift($parts);
-        }
-        $nextpart = empty($parts) ? null : array_shift($parts);
-        $currentpartindex = 0;
-        foreach ($question->answers as $answerid => $answer) {
-            $aquestion = new stdClass();
-            $aquestion->answers = [];
-            $aquestion->feedback = $this->options->feedback ? $answer->feedback : '';
-            $aquestion->index = $questionstartnum++;
-            $answerkey = 'answer' . $answerid;
-            $aquestion->id = $this->qa->get_qt_field_name($answerkey);
-            $response = $this->qa->get_last_qt_var($answerkey, '');
-            $iscorrect = false;
-            for ($i = 1; $i <= utils::OPTION_COUNT; $i++) {
-                $ananswer = new stdClass();
-                $ananswer->label = get_string('option', 'qtype_answersheet', $i);
-                $ananswer->value = $i;
-                if ($response == $i) {
-                    $ananswer->selected = true;
-                    $iscorrect = ($response == $answer->answer) ? 1 : 0;
-                }
-                if ($this->options->correctness) {
-                    $isrightvalue = ($response == $answer->answer) ? 1 : 0;
-                    $ananswer->additionalclass = $this->displayoptions[$isrightvalue]->additionalclass;
-
-                }
-                $aquestion->answers[] = $ananswer;
-
-            }
-            if ($this->options->correctness) {
-                $ananswer->feedbackimage = $this->displayoptions[$iscorrect]->image;
-            }
-            $data->parts[$currentpartindex]->questions[] = $aquestion;
-            if ($nextpart && $lastindex >= $nextpart->get('start')) {
-                $nextpart = empty($parts) ? null : array_shift($parts);
-                $currentpartindex++;
-            }
-            $lastindex++;
-        }
-
         // return $data;
         $data->questionid = $question->id;
         $data->modules = $this->processmodules($question->id);

@@ -101,4 +101,21 @@ class answersheet_answers extends persistent {
     public static function get_all_records_for_module(int $moduleid): array {
         return self::get_records(['moduleid' => $moduleid], 'sortorder');
     }
+
+    /**
+     * Clone a record
+     * @param int $id
+     * @return answersheet_answers
+     */
+    public function clone(): answersheet_answers {
+        $record = $this->to_record();
+        $newrecord = new answersheet_answers(0);
+        $newrecord->set('moduleid', $record->moduleid);
+        $newrecord->set('sortorder', $record->sortorder);
+        $newrecord->set('name', $record->name);
+        $newrecord->set('options', $record->options);
+        $newrecord->set('answer', $record->answer);
+        $newrecord->set('feedback', $record->feedback);
+        return $newrecord;
+    }
 }

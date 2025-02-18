@@ -23,7 +23,6 @@
  */
 
 use qtype_answersheet\answersheet_docs;
-use qtype_answersheet\answersheet_parts;
 use qtype_answersheet\utils;
 use qtype_answersheet\output\answersheet;
 use qtype_answersheet\output\sheet_renderer;
@@ -60,13 +59,6 @@ class qtype_answersheet_edit_form extends question_edit_form {
             get_string('startnumbering', 'qtype_answersheet'));
         $mform->setType('startnumbering', PARAM_INT);
 
-        $this->add_parts_fields();
-
-        // raise_memory_limit(MEMORY_EXTRA);
-        // $this->add_per_answer_fields($mform, get_string('answer', 'qtype_answersheet', '{no}'),
-        //     question_bank::fraction_options_full(), utils::BASE_ANSWER_COUNT, utils::BASE_ANSWER_COUNT);
-        // raise_memory_limit(MEMORY_STANDARD);
-
         $id = optional_param('id', 0, PARAM_INT);
         $mform->addElement('header', 'answerhdr',
         get_string('answers', 'question'), '');
@@ -76,7 +68,6 @@ class qtype_answersheet_edit_form extends question_edit_form {
         $mform->addElement('hidden', 'newquestion', '');
         $mform->setType('newquestion', PARAM_TEXT);
         $mform->addElement('html', $renderer->render($programm));
-
 
         $this->add_combined_feedback_fields(true);
         $mform->disabledIf('shownumcorrect', 'single', 'eq', 1);
@@ -202,7 +193,6 @@ class qtype_answersheet_edit_form extends question_edit_form {
                 }
             }
             answersheet_docs::add_data($question);
-            answersheet_parts::add_data($question);
         }
         return $question;
     }
@@ -307,44 +297,6 @@ class qtype_answersheet_edit_form extends question_edit_form {
         $repeatedoptions['fraction']['type'] = PARAM_INT;
         $answersoption = 'answers';
         return $repeated;
-    }
-
-    /**
-     * Add parts fields
-     */
-    protected function add_parts_fields() {
-        $mform = $this->_form;
-        $mform->addElement('header', 'partsheader',
-            get_string('partsheader', 'qtype_answersheet'));
-        $elements = [];
-        $elements[] =
-            $mform->createElement('text',
-                'partstart',
-                get_string('partstart', 'qtype_answersheet'));
-        $elements[] =
-            $mform->createElement('text',
-                'partname',
-                get_string('partname', 'qtype_answersheet'));
-        $repeated = [
-            $mform->createElement('group', 'parts', get_string('parts', 'qtype_answersheet'), $elements, array(' '),
-                true)];
-        $repeatcount = 1;
-        if (!empty($this->question->id)) {
-            $repeatcount = answersheet_parts::count_records(
-                array('questionid' => $this->question->id));
-            $repeatcount = $repeatcount ? $repeatcount : 1;
-        }
-        $repeatedoptions = [];
-        $repeatedoptions['parts[partstart]']['type'] = PARAM_INT;
-        $repeatedoptions['parts[partname]']['type'] = PARAM_RAW;
-        $this->repeat_elements(
-            $repeated,
-            $repeatcount,
-            $repeatedoptions,
-            'repeatparts',
-            'addparts',
-            1
-        );
     }
 
     /**

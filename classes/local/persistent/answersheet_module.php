@@ -21,7 +21,7 @@ use lang_string;
 use stdClass;
 
 /**
- * Class sprogramme_disc
+ * Class sprogramme_module
  *
  * @package    qtype_answersheet
  * @copyright  2025 Bas Brands <bas@sonsbeekmedia.nl>
@@ -121,5 +121,21 @@ class answersheet_module extends persistent {
      */
     public function get_class(): string {
         return self::TYPES[$this->get('type')];
+    }
+
+
+    /**
+     * Clone a record
+     * @param int $id
+     * @return answersheet_answers
+     */
+    public function clone(): answersheet_module {
+        $record = $this->to_record();
+        $newmodule = new answersheet_module(0);
+        $newmodule->set('sortorder', $record->sortorder);
+        $newmodule->set('name', $record->name);
+        $newmodule->set('numoptions', $record->numoptions);
+        $newmodule->set('type', $record->type);
+        return $newmodule;
     }
 }

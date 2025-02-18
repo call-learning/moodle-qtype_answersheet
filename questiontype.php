@@ -23,7 +23,6 @@
  */
 
 use qtype_answersheet\answersheet_docs;
-use qtype_answersheet\answersheet_parts;
 use qtype_answersheet\utils;
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
@@ -90,16 +89,7 @@ class qtype_answersheet extends question_type {
             $question->fraction[] = 0;
             $question->feedback[] = $answer['feedback'];
         }
-        // foreach ($answers as $answer) {
-        //     $value = $answer->get('options');
-        //     // Change the A, B, C into 1, 2, 3.
-        //     $value = ord($value) - 64;
-        //     $feedback = $answer->get('feedback');
-        //     $question->answer[] = $value;
-        //     $question->answersheetanswer[] = $answer->get('id');
-        //     $question->fraction[] = 0;
-        //     $question->feedback[] = $feedback;
-        // }
+
         foreach ($question->feedback as $key => $feedbacktext) {
             $feedbacks[] = [
                 'format' => FORMAT_PLAIN,
@@ -111,7 +101,6 @@ class qtype_answersheet extends question_type {
         $this->save_hints($question);
 
         $this->save_documents($question);
-        $this->save_parts($question);
         // This will flattern the structure regarding the combined feedback.
         if (empty($question->options)) {
             $question->options = new stdClass();
@@ -175,7 +164,6 @@ class qtype_answersheet extends question_type {
         $this->initialise_question_hints($question, $questiondata);
         $this->initialise_combined_feedback($question, $questiondata);
         answersheet_docs::add_data($question);
-        answersheet_parts::add_data($question);
     }
 
     /**
@@ -239,31 +227,6 @@ class qtype_answersheet extends question_type {
     }
 
     /**
-     * Save parts information
-     *
-     * @param object $question
-     */
-    protected function save_parts($question) {
-
-        if ($question->id) {
-            global $DB;
-            // First delete all existing parts for this question.
-            $DB->delete_records(answersheet_parts::TABLE, array('questionid' => $question->id));
-            $modules = answersheet_api::get_data(1000);
-            $start = 0;
-            foreach ($modules as $mod) {
-                $part = new stdClass();
-                $part->questionid = $question->id;
-                $part->start = $start;
-                $part->name = $mod['modulename'];
-                $start = count($mod['rows']);
-                $questionpart = new answersheet_parts(0, $part);
-                $questionpart->create();
-            }
-        }
-    }
-
-    /**
      * Save the answers, with any extra data.
      *
      * Questions that use answers will call it from {@link save_question_options()}.
@@ -311,14 +274,25 @@ class qtype_answersheet extends question_type {
             $answer = $this->fill_answer_fields($answer, $question, $key, $context);
             $DB->update_record('question_answers', $answer);
             $answersheetanswerid = $question->answersheetanswer[$key];
+            // Create a new answersheet answer if it does not exist.
             $answersheetanswer = answersheet_answers::get_record(['id' => $answersheetanswerid]);
+            $clone = false;
+            $moduleid = $answersheetanswer->get('moduleid');
+            if ($answersheetanswer->get('answerid') > 0) {
+                $answersheetanswer = $answersheetanswer->clone();
+                $clone = true;
+            }
             $answersheetanswer->set('answerid', $answer->id);
             $answersheetanswer->set('questionid', $question->id);
-            $answersheetanswer->save();
-            $moduleid = $answersheetanswer->get('moduleid');
+
             $module = answersheet_module::get_record(['id' => $moduleid]);
+            if ($clone) {
+                $module = $module->clone();
+            }
             $module->set('questionid', $question->id);
             $module->save();
+            $answersheetanswer->set('moduleid', $module->get('id'));
+            $answersheetanswer->save();
 
             if ($isextraanswerfields) {
                 // Check, if this answer contains some extra field data.
