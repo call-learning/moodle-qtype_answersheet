@@ -32,7 +32,7 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $paths = parent::define_question_plugin_structure();
         // Add own qtype stuff.
         $elename = 'module';
-        $elepath = $this->get_pathfor('/modules/module'); // We used get_recommended_name() so this works.
+        $elepath = $this->get_pathfor('/modules/mod'); // We used get_recommended_name() so this works.
         $paths[] = new restore_path_element($elename, $elepath);
         $elename = 'aanswers';
         $elepath = $this->get_pathfor('/aanswers/aanswer'); // We used get_recommended_name() so this works.
@@ -55,8 +55,8 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
      *
      * @param array|object $data Drag and drop drops data to work with.
      */
-    public function process_module($data) {
-        $this->do_process_element('modules', $data);
+    public function process_modules($data) {
+        $this->do_process_element('module', $data);
     }
 
     /**
