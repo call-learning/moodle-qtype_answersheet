@@ -25,7 +25,6 @@ import State from 'qtype_answersheet/local/state';
 import Repository from 'qtype_answersheet/local/repository';
 import Notification from 'core/notification';
 import {get_string as getString} from 'core/str';
-import {debounce} from 'core/utils';
 import './components/table';
 
 /**
@@ -118,6 +117,7 @@ class Manager {
             if (moduletype) {
                 this.changeModule(moduletype);
             }
+            this.setTableData();
         });
         // Listen to the arrow down and up keys to navigate to the next or previous row.
         form.addEventListener('keydown', (e) => {
@@ -131,51 +131,6 @@ class Manager {
         });
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-        });
-
-        let dragging = null;
-
-        form.addEventListener('dragstart', (e) => {
-            if (e.target.tagName === 'TR') {
-                dragging = e.target;
-                e.target.effectAllowed = 'move';
-            }
-        });
-        form.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const target = e.target.closest('tr');
-            if (target && target !== dragging && target.parentNode.dataset.region === 'rows') {
-                const rect = target.getBoundingClientRect();
-                if (e.clientY - rect.top > rect.height / 2) {
-                    target.parentNode.insertBefore(dragging, target.nextSibling);
-                } else {
-                    target.parentNode.insertBefore(dragging, target);
-                }
-            }
-        });
-        form.addEventListener("drop", (e) => {
-            e.preventDefault(); // Voorkom standaard drop-actie
-        });
-        form.addEventListener('dragend', (e) => {
-            const rowId = dragging.dataset.index;
-            const prevRowId = dragging.previousElementSibling ? dragging.previousElementSibling.dataset.index : 0;
-            const moduleId = dragging.closest('[data-region="module"]').dataset.id;
-            Repository.updateSortOrder(
-                {
-                    type: 'row',
-                    questionid: this.questionid,
-                    moduleid: moduleId,
-                    id: rowId,
-                    previd: prevRowId
-                }
-            );
-            dragging = null;
-            e.preventDefault(); // Voorkom standaard drop-actie
-        });
-
-        // Listen for the saveconfirm custom event. When run save the table data.
-        document.addEventListener('saveconfirm', () => {
-            this.setTableData();
         });
     }
 
@@ -201,14 +156,9 @@ class Manager {
         try {
             const response = await Repository.getData({questionid: this.questionid});
             // Validate the response, the response.date should be a string that can be parsed to a JSON object.
-            if (response.modules.length > 0) {
-                const modules = this.parseModules(response.modules);
-                State.setValue('modules', modules);
-            } else {
-                const moduleid = await this.createModule(' ', 0);
-                await this.createRow(moduleid, 0, 0);
-                this.getTableData();
-            }
+            const modules = await this.parseModules(response.modules);
+            State.setValue('modules', modules);
+            this.setTableData();
         } catch (error) {
             Notification.exception(error);
         }
@@ -219,10 +169,11 @@ class Manager {
      * @param {Array} modules The modules.
      * @return {Array} The parsed rows.
      */
-    parseModules(modules) {
-        modules.forEach(mod => {
+    async parseModules(modules) {
+        modules.forEach(async(mod) => {
             const type = this.TYPES[mod.type];
             mod[type] = true;
+            mod.indicator = await this.getIndicator(mod.numoptions, mod.type);
             mod.rows.map(row => {
                 row.cells = row.cells.map(cell => {
                     const column = mod.columns.find(column => column.column == cell.column);
@@ -323,23 +274,9 @@ class Manager {
      * @return {void}
      */
     async setTableData() {
-        const set = debounce(async() => {
-            const saveConfirmButton = document.querySelector('[data-action="saveconfirm"]');
-            saveConfirmButton.classList.add('saving');
-            const modules = State.getValue('modules');
-            const cleanedModules = this.cleanModules(modules);
-            if (this.questionid == 0) {
-                this.tempfield.value = JSON.stringify(cleanedModules);
-            }
-            const response = await Repository.setData({questionid: this.questionid, modules: cleanedModules});
-            if (!response) {
-                Notification.exception('No response from the server');
-            }
-            setTimeout(() => {
-                saveConfirmButton.classList.remove('saving');
-            }, 200);
-        }, 600);
-        set();
+        const modules = State.getValue('modules');
+        const cleanedModules = this.cleanModules(modules);
+        this.tempfield.value = JSON.stringify(cleanedModules);
     }
 
     /**
@@ -359,15 +296,13 @@ class Manager {
         if (btn.dataset.action === 'deletemodule') {
             this.deleteModule(btn);
         }
-        if (btn.dataset.action === 'saveconfirm') {
-            this.setTableData();
-        }
         if (btn.dataset.action === 'moduleremoveoption') {
             this.updateModuleOption(btn, false);
         }
         if (btn.dataset.action === 'moduleaddoption') {
             this.updateModuleOption(btn, true);
         }
+        this.setTableData();
     }
 
     /**
@@ -386,7 +321,7 @@ class Manager {
             rowid = rows[rows.length - 1].id;
         }
 
-        const row = await this.createRow(moduleid, rowid);
+        const row = await this.createRow(moduleid, rows.length + 1);
         if (!row) {
             return;
         }
@@ -399,18 +334,21 @@ class Manager {
     /**
      * Create a new row.
      *
-     * @param {Number} moduleid The moduleid.
-     * @param {Number} prevrowid The previous rowid.
+     * @param {int} moduleid The moduleid.
+     * @param {int} sortorder The sortorder.
      * @return {Promise} The promise.
      */
-    async createRow(moduleid, prevrowid) {
+    async createRow(moduleid, sortorder) {
         let rowid = this.temprowid++;
-        if (this.questionid != 0) {
-            rowid = await Repository.createRow({questionid: this.questionid, moduleid: moduleid, prevrowid: prevrowid});
-        }
+
         return new Promise((resolve) => {
             const row = {};
             row.id = rowid;
+            row.moduleid = moduleid;
+            row.numoptions = 4;
+            row.sortorder = sortorder;
+            row.type = 1;
+            row.radiochecked = true;
             const columns = State.getValue('columns');
             if (columns === undefined) {
                 resolve();
@@ -438,26 +376,14 @@ class Manager {
         const rowid = btn.closest('[data-row]').dataset.index;
         const moduleid = btn.closest('[data-region="module"]').dataset.id;
         const module = modules.find(m => m.moduleid == moduleid);
-        if (this.questionid == 0) {
-            const index = module.rows.findIndex(r => r.id == rowid);
-            module.rows.splice(index, 1);
-            this.resetRowSortorder();
-            State.setValue('modules', modules);
-            return new Promise((resolve) => {
-                resolve(rowid);
-            });
-        }
-        const response = await Repository.deleteRow({questionid: this.questionid, rowid: rowid});
+        const index = module.rows.findIndex(r => r.id == rowid);
+        module.rows.splice(index, 1);
+        this.resetRowSortorder();
+        State.setValue('modules', modules);
         return new Promise((resolve) => {
-            if (response) {
-                const rows = module.rows;
-                const index = Array.from(btn.closest('[data-region="rows"]').children).indexOf(btn.closest('[data-row]'));
-                rows.splice(index, 1);
-                this.resetRowSortorder();
-                State.setValue('modules', modules);
-            }
             resolve(rowid);
         });
+
     }
 
     /**
@@ -485,7 +411,6 @@ class Manager {
                 });
             }
         });
-        this.setTableData();
     }
 
     /**
@@ -508,11 +433,15 @@ class Manager {
             if (moduleObject.moduleid == moduleid) {
                 moduleObject.modulename = name;
                 moduleObject.type = parseInt(type);
+                moduleObject.class = this.TYPES[type];
                 moduleObject.numoptions = parseInt(numoptions);
+                Object.values(this.TYPES).forEach(type => {
+                    moduleObject[type] = false;
+                });
+                moduleObject[this.TYPES[type]] = true;
             }
         });
         this.updateRangeIndicator(moduleElement);
-        this.setTableData();
     }
 
     /**
@@ -541,13 +470,22 @@ class Manager {
         const type = moduleElement.querySelector('[data-region="moduletype"]').value;
         const numoptions = moduleElement.querySelector('[data-region="numoptions"]').value;
         const indicator = moduleElement.querySelector('[data-region="indicator"]');
+        indicator.textContent = await this.getIndicator(numoptions, type);
+    }
+
+    /**
+     * Get the indicator string
+     * @param {int} numoptions The number of options.
+     * @param {int} type The type.
+     * @return {string} The indicator string.
+     */
+    async getIndicator(numoptions, type) {
         const stringname = 'indicator:' + this.TYPES[type];
-        // Get the x-th letter of the alphabet.
         const stringtemplate = {
             'options': numoptions,
             'lastletter': String.fromCharCode(65 + parseInt(numoptions) - 1),
         };
-        indicator.textContent = await getString(stringname, 'qtype_answersheet', stringtemplate);
+        return await getString(stringname, 'qtype_answersheet', stringtemplate);
     }
 
     /**
@@ -560,79 +498,37 @@ class Manager {
         const modules = State.getValue('modules');
         const moduleid = btn.closest('[data-region="module"]').dataset.id;
         const module = modules.find(m => m.moduleid == moduleid);
-        const response = await Repository.deleteModule({questionid: this.questionid, moduleid: moduleid});
         return new Promise((resolve) => {
-            if (response) {
-                const index = modules.indexOf(module);
-                modules.splice(index, 1);
-                State.setValue('modules', modules);
-            }
+            const index = modules.indexOf(module);
+            modules.splice(index, 1);
+            State.setValue('modules', modules);
             resolve(moduleid);
         });
     }
 
     /**
-     * Create a new module.
-     * @param {String} name The name.
-     * @param {Number} index The index.
-     * @param {Number} type The type.
-     * @param {Number} numoptions The number of options.
-     * @return {Promise} The promise.
-     */
-    async createModule(name, index, type = 1, numoptions = 4) {
-        const id = await Repository.createModule(
-            {
-                name: name,
-                questionid: this.questionid,
-                sortorder: index,
-                type: type,
-                numoptions: numoptions
-            });
-        return new Promise((resolve) => {
-            resolve(id);
-        });
-    }
-
-    /**
      * Add a new module.
-     * @return {void}
+     * @return {int} The moduleid.
      */
     async addModule() {
         const modules = State.getValue('modules');
         const index = modules.length;
         const numoptions = 4;
         let moduleid = modules.length + 1;
-        if (this.questionid != 0) {
-            moduleid = await this.createModule(' ', index, 1, numoptions);
-        }
-        const row = await this.createRow(moduleid, 0);
-
+        const row = await this.createRow(moduleid, 1);
         const module = {
             moduleid: moduleid,
             modulesortorder: index + 1,
             modulename: ' ',
             type: 1,
             numoptions: numoptions,
-            indicator: 'A - ' + String.fromCharCode(65 + numoptions - 1),
+            indicator: this.getIndicator(numoptions, 1),
             rows: [row],
         };
         module[this.TYPES['1']] = true;
         modules.push(module);
         State.setValue('modules', modules);
-    }
-
-    /**
-     * Get the row from the state.
-     * @param {int} rowid The rowid.
-     */
-    getRow(rowid) {
-        const modules = State.getValue('modules');
-        // Combine all rows in one array.
-        const rows = modules.reduce((acc, module) => {
-            return acc.concat(module.rows);
-        }, []);
-        const row = rows.find(r => r.id == rowid);
-        return row;
+        return moduleid;
     }
 
     /**
@@ -643,12 +539,11 @@ class Manager {
         const modules = State.getValue('modules');
         modules.forEach(module => {
             module.rows.forEach((row, index) => {
-                row.sortorder = index;
+                row.sortorder = index + 1;
             });
         });
         State.setValue('modules', modules);
     }
-
 
     /**
      * Navigate to the next or previous row and left or right column.

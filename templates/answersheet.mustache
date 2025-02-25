@@ -375,12 +375,6 @@
 <link rel="stylesheet" type="text/css" href="{{{cssurl}}}">
 
 <div class="answersheet">
-    <div class="saveconfirm icon-no-margin">
-        <button class="btn btn-icon" data-action="saveconfirm">
-            <span class="defaulticon">{{#pix}}e/save, core, {{#str}}save{{/str}}{{/pix}}</span>
-            <span class="savingicon">{{#pix}}i/loading, core, {{#str}}saving, qtype_answersheet{{/str}}{{/pix}}</span>
-        </button>
-    </div>
     <div class="my-5 d-none" data-region="modules">
         {{> qtype_answersheet/table/modules}}
     </div>
@@ -390,14 +384,6 @@
     <div data-region="modules">
     </div>
 </div>
-{{#debug}}
-    <div class="d-flex pt-5 d-none">
-        <a href="#" data-toggle="collapse" data-target="#debugc">Debug</a>
-        <div id="debugc" class="collapse">
-            <pre id="debug">{{{debug}}}</pre>
-        </div>
-    </div>
-{{/debug}}
 {{#js}}
 require(['qtype_answersheet/local/manager'], function(manager) {
     const element = document.querySelector('[data-action="editprogramme"]');

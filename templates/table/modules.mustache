@@ -398,7 +398,7 @@
                     <button class="btn btn-icon icon-no-margin" data-id="{{moduleid}}" data-action="moduleremoveoption">{{#pix}}e/delete, core, {{#str}}remove{{/str}}{{/pix}}</button>
                     <button class="btn btn-icon icon-no-margin" data-id="{{moduleid}}" data-action="moduleaddoption">{{#pix}}e/insert, core, {{#str}}add{{/str}}{{/pix}}</button>
                 </div>
-                <div class="indicator small ml-1 mr-auto" data-region="indicator">
+                <div class="indicator small ml-1 mr-1" data-region="indicator">
                     {{{indicator}}}
                 </div>
                 <button class="btn btn-icon icon-no-margin mr-1 ml-3" data-id="{{moduleid}}" data-action="deletemodule">{{#pix}}i/delete, core, {{#str}}delete{{/str}}{{/pix}}</button>
@@ -418,10 +418,10 @@
             </tbody>
         </table>
         {{#editor}}
-            <button class="btn btn-sm" href="#" data-id="-1" data-action="addrow">{{#str}}addrow, qtype_answersheet{{/str}}</button>
+            <button class="btn btn-link btn-sm" href="#" data-id="-1" data-action="addrow">{{#str}}addrow, qtype_answersheet{{/str}}</button>
         {{/editor}}
     </div>
 {{/modules}}
 {{#editor}}
-    <button class="btn btn-sm" href="#" data-id="-1" data-action="addmodule">{{#str}}addmodule, qtype_answersheet{{/str}}</button>
+    <button class="btn btn-link btn-sm" href="#" data-id="-1" data-action="addmodule">{{#str}}addmodule, qtype_answersheet{{/str}}</button>
 {{/editor}}

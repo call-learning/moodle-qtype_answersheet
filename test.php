@@ -29,6 +29,7 @@ use qtype_answersheet\output\sheet_renderer;
 require_login();
 
 $questionid = optional_param('questionid', 0, PARAM_INT);
+$couseid = optional_param('courseid', 0, PARAM_INT);
 
 $url = new moodle_url('/question/type/answersheet/test.php', ['questionid' => $questionid, 'questionid' => $questionid]);
 $PAGE->set_url($url);

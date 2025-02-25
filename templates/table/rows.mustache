@@ -126,27 +126,29 @@
     <table>
 {{/mustacheonly}}
 {{#rows}}
-    <tr data-row data-index="{{id}}" draggable="true">
+    <tr data-row data-index="{{id}}">
         {{#cells}}
             {{#editor}}
-                <td data-cell data-columnid="{{columnid}}" class="{{^canedit}}readonly {{/canedit}}{{#float}}float {{/float}}{{#int}}int {{/int}}{{column}}">
-                    {{#int}}
-                        <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
-                    {{/int}}
-                    {{#float}}
-                        <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
-                    {{/float}}
-                    {{#text}}
-                        <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="text" value="{{{value}}}" placeholder="{{{sample_value}}}" />
-                    {{/text}}
-                    {{#select}}
-                        <select data-input="auto" {{^canedit}}readonly{{/canedit}} class="programm-input">
-                            {{#options}}
-                                <option value="{{{name}}}" {{#selected}}selected{{/selected}}>{{{name}}}</option>
-                            {{/options}}
-                        </select>
-                    {{/select}}
-                </td>
+                {{#visible}}
+                    <td data-cell data-columnid="{{columnid}}" class="{{^canedit}}readonly {{/canedit}}{{#float}}float {{/float}}{{#int}}int {{/int}}{{column}}">
+                        {{#int}}
+                            <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
+                        {{/int}}
+                        {{#float}}
+                            <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
+                        {{/float}}
+                        {{#text}}
+                            <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="text" value="{{{value}}}" placeholder="{{{sample_value}}}" />
+                        {{/text}}
+                        {{#select}}
+                            <select data-input="auto" {{^canedit}}readonly{{/canedit}} class="programm-input">
+                                {{#options}}
+                                    <option value="{{{name}}}" {{#selected}}selected{{/selected}}>{{{name}}}</option>
+                                {{/options}}
+                            </select>
+                        {{/select}}
+                    </td>
+                {{/visible}}
             {{/editor}}
             {{^editor}}
                 {{#visible}}
@@ -159,7 +161,6 @@
         {{#editor}}
         <td class="actions">
             <button class="btn btn-icon icon-no-margin mr-1 jsbutton" data-id="{{id}}" data-action="deleterow">{{#pix}}i/delete, core, {{#str}}delete{{/str}}{{/pix}}</button>
-            <button class="btn btn-icon icon-no-margin mr-1 jsbutton">{{#pix}}i/move_2d, core, {{#str}}move{{/str}}{{/pix}}</button>
             <button class="btn btn-icon icon-no-margin mr-1 jsbutton" data-id="{{id}}" data-action="addrow">{{#pix}}e/insert, core, {{#str}}add{{/str}}{{/pix}}</button>
         </td>
         {{/editor}}

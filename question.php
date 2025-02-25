@@ -60,7 +60,8 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function get_correct_response() {
         $response = array();
         foreach ($this->answers as $key => $answer) {
-            $response[$this->field($key)] = $answer->answer;
+            // Remove any leading or trailing whitespace and convert to lower case.
+            $response[$this->field($key)] = trim(strtolower($answer->answer));
         }
         return $response;
     }
@@ -204,7 +205,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $isrightvalue = ($currentresponse == $answerinfo->answer) ? 1 : 0;
+            $isrightvalue = $this->compare_response_with_answer($currentresponse, $answerinfo);
             $totalscore += $isrightvalue;
         }
         $fraction = $totalscore / count($this->answers);
@@ -223,7 +224,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $isrightvalue = ($currentresponse == $answerinfo->answer) ? 1 : 0;
+            $isrightvalue = $this->compare_response_with_answer($currentresponse, $answerinfo);
             if (!$isrightvalue) {
                 $fieldname = $this->field($answerkey);
                 unset($response[$fieldname]);
@@ -246,7 +247,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $rightcount += ($currentresponse == $answerinfo->answer) ? 1 : 0;
+            $rightcount += $this->compare_response_with_answer($currentresponse, $answerinfo);
         }
         return array($rightcount, count($this->answers));
     }
@@ -254,7 +255,7 @@ class qtype_answersheet_question extends question_graded_automatically {
     /**
      * Compute final grade
      *
-     * @param array $responses
+     * @param string $responses
      * @param int $totaltries
      * @return float|int
      */
@@ -265,7 +266,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             $finallyright = false;
             foreach ($responses as $i => $response) {
                 $currentresponse = $this->get_response_value($answerkey, $response);
-                if (($currentresponse != $answerinfo->answer)) {
+                if (!$this->compare_response_with_answer($currentresponse, $answerinfo)) {
                     $lastwrongindex = $i;
                     $finallyright = false;
                 } else {
@@ -279,5 +280,20 @@ class qtype_answersheet_question extends question_graded_automatically {
         }
         return $totalscore / count($this->answers);
 
+    }
+
+    /**
+     * Check if the response is correct
+     * @param array $currentresponse
+     * @param object $answerinfo
+     * @return int 1 if correct, 0 if not
+     */
+    public function compare_response_with_answer($currentresponse, $answerinfo) {
+        $answer = trim(strtolower($answerinfo->answer));
+        if ($currentresponse == $answer) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 }

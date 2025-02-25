@@ -100,10 +100,14 @@ class answersheet_question implements renderable, templatable {
         return $data;
     }
 
+    /**
+     * Process the answersheet modules
+     * @param int $questionid
+     * @return array
+     */
     private function processmodules(int $questionid): array {
         $data = answersheet_api::get_data($questionid);
         $newdata = [];
-        //$newdata['questionid'] = $questionid;
         foreach ($data as $module) {
             $newmodule = [
                 'moduleid' => $module['moduleid'],
@@ -139,20 +143,28 @@ class answersheet_question implements renderable, templatable {
                         if ($newquestion['response'] == $index + 1) {
                             $answer['selected'] = true;
                             if ($this->options->correctness) {
-                                $iscorrect = ($newquestion['response'] == $newquestion['correctanswer']) ? 1 : 0;
+                                $iscorrect = $this->compare_response_with_answer($newquestion);
                                 $answer['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
+                                $answer['iscorrect'] = $iscorrect;
                             }
                         }
 
                         return $answer;
                     }, range(0, $module['numoptions'] - 1));
+                    if ($this->options->correctness) {
+                        $iscorrect = $this->compare_response_with_answer($newquestion);
+                        $newquestion['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
+                        $newquestion['showanswer'] = true;
+                        $newquestion['iscorrect'] = $iscorrect;
+                    }
                 }
                 if ($module['type'] == answersheet_module::FREE_TEXT) {
                     $newquestion['correctanswer'] = $newquestion['answer'];
                     if ($this->options->correctness) {
-                        $iscorrect = ($newquestion['response'] == $newquestion['correctanswer']) ? 1 : 0;
+                        $iscorrect = $this->compare_response_with_answer($newquestion);
                         $newquestion['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
                         $newquestion['showanswer'] = true;
+                        $newquestion['iscorrect'] = $iscorrect;
                     }
                 }
                 if ($module['type'] == answersheet_module::LETTER_BY_LETTER) {
@@ -171,9 +183,10 @@ class answersheet_question implements renderable, templatable {
                         return $answer;
                     }, range(0, $module['numoptions'] - 1));
                     if ($this->options->correctness) {
-                        $iscorrect = ($newquestion['response'] == $newquestion['correctanswer']) ? 1 : 0;
+                        $iscorrect = $this->compare_response_with_answer($newquestion);
                         $newquestion['additionalclass'] = $this->displayoptions[$iscorrect]->additionalclass;
                         $newquestion['showanswer'] = true;
+                        $newquestion['iscorrect'] = $iscorrect;
                     }
                 }
                 $newmodule['questions'][] = $newquestion;
@@ -181,6 +194,21 @@ class answersheet_question implements renderable, templatable {
             $newdata[] = $newmodule;
         }
         return $newdata;
+    }
+
+    /**
+     * Check if the response is correct
+     * @param array $question
+     * @return int 1 if correct, 0 if not
+     */
+    public function compare_response_with_answer($question) {
+        $answer = trim(strtolower($question['response']));
+        $correctanswer = trim(strtolower($question['correctanswer']));
+        if ($correctanswer == $answer) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -226,14 +254,28 @@ class answersheet_question implements renderable, templatable {
     protected function get_document_info($documenttype) {
         $doccontext = [];
         $question = $this->qa->get_question();
+
         $docs =
             answersheet_docs::get_records(array('questionid' => $question->id,
                 'type' => array_flip(answersheet_docs::DOCUMENT_TYPE_SHORTNAMES)[$documenttype]),
                 'sortorder');
 
         foreach (array_values($docs) as $index => $doc) {
+            $docid = $doc->get('id');
+            $qcid = $question->contextid;
+            $qubaid = $this->qa->get_usage_id();
+            $slot = $this->qa->get_slot();
+            $viewurl = new moodle_url('/question/type/answersheet/viewdoc.php',
+                [
+                    'docid' => $docid,
+                    'cmid' => $this->options->context->instanceid,
+                    'qcid' => $qcid,
+                    'qubaid' => $qubaid,
+                    'slot' => $slot,
+                ]);
             $doccontext[] = [
                 'url' => $this->get_url_for_document($documenttype, $doc->get('id')),
+                'viewurl' => $viewurl->out(),
                 'name' => $doc->get('name')
             ];
         }

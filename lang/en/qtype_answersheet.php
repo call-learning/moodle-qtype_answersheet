@@ -25,48 +25,46 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'Answer sheet';
-$string['pluginname_help'] = 'Answer sheet type of question with audio and pdf file';
-$string['pluginnameediting'] = 'Editing a Answer sheet question';
-$string['pluginnameadding'] = 'Adding a Answer sheet question';
-$string['pluginname_link'] = 'question/type/answersheet';
-$string['pluginnamesummary'] = 'Answer sheet type of question are used to display a main document and a series of multiple
- choices questions.';
-
+$string['addmodule'] = 'Add module';
+$string['addrow'] = 'Add row';
+$string['answer_help'] = 'Answer {no} help';
+$string['answer'] = 'Answer {no}';
+$string['answerheader'] = 'Answers';
+$string['answersheet:edit'] = 'Edit the Answer sheet';
+$string['answersheet:view'] = 'View the Answer sheet';
 $string['audio:title'] = 'Audio files';
 $string['audio'] = 'Audio files {no}';
 $string['audioname'] = 'Audio files name {no}';
+$string['correctanswer'] = 'Correct answer: {$a}';
 $string['document:title'] = 'Documents';
 $string['document'] = 'Documents {no}';
-
 $string['documentname'] = 'Document name {no} ';
 $string['editor'] = 'Editor files';
-
-$string['answerheader'] = 'Answers';
+$string['freetext'] = 'Free text';
+$string['indicator:freetext'] = 'Free text';
+$string['indicator:letterbyletter'] = '{$a->options} letters';
+$string['indicator:radiochecked'] = '{$a->options} ( A - {$a->lastletter} )';
+$string['invaliddata'] = 'Invalid data: {$a}';
+$string['letterbyletter'] = 'Letter by letter';
+$string['modulename'] = 'Module name';
 $string['numberofanswers'] = 'Number of answers';
-$string['answer'] = 'Answer {no}';
-$string['answer_help'] = 'Answer {no} help';
+$string['numoptions'] = 'Number of options';
 $string['option:1'] = 'A';
 $string['option:2'] = 'B';
 $string['option:3'] = 'C';
 $string['option:4'] = 'D';
 $string['option'] = '{$a}';
-$string['startnumbering'] = 'Start numbering';
-
+$string['pluginname_help'] = 'Answer sheet type of question with audio and pdf file';
+$string['pluginname_link'] = 'question/type/answersheet';
+$string['pluginname'] = 'Answer sheet';
+$string['pluginnameadding'] = 'Adding a Answer sheet question';
+$string['pluginnameediting'] = 'Editing a Answer sheet question';
+$string['pluginnamesummary'] = 'Answer sheet type of question are used to display a main document and a series of multiple choices
+questions.';
+$string['radiochecked'] = 'Radio checked';
 $string['row'] = 'Row {$a}';
 $string['save'] = 'Save';
 $string['saving'] = 'Saving...';
-$string['addmodule'] = 'Add module';
-$string['addrow'] = 'Add row';
-$string['invaliddata'] = 'Invalid data: {$a}';
-$string['answersheet:edit'] = 'Edit the Answer sheet';
-$string['answersheet:view'] = 'View the Answer sheet';
-$string['modulename'] = 'Module name';
+$string['startnumbering'] = 'Start numbering';
 $string['type'] = 'Type';
-$string['radiochecked'] = 'Radio checked';
-$string['letterbyletter'] = 'Letter by letter';
-$string['freetext'] = 'Free text';
-$string['numoptions'] = 'Number of options';
-$string['indicator:radiochecked'] = '{$a->options} ( A - {$a->lastletter} )';
-$string['indicator:letterbyletter'] = '{$a->options} letters';
-$string['indicator:freetext'] = 'Free text';
+$string['viewlarge'] = 'View large';

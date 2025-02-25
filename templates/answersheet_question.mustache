@@ -35,11 +35,11 @@
         {{{questiontext}}}
     </div>
     <div class="row">
-        <div class="col d-none">
-            <div class="documentpdf">
-                {{#pdffiles}}
+        {{#pdffiles}}
+            <div class="col-12 col-md-6">
+                <div class="documentpdf">
                     <span>{{name}}</span>
-                    <object id="documentpdf-{{uniqid}}" data="{{url}}" type="application/pdf" width="100%" height="600">
+                    <object class="docpdf" id="documentpdf-{{uniqid}}" data="{{url}}" type="application/pdf" width="100%" height="600">
                         <param name="src" value="{{url}}"/>
                     </object>
                     {{#js}}
@@ -47,126 +47,157 @@
                         Maximise('documentpdf-{{uniqid}}');
                         });
                     {{/js}}
-                {{/pdffiles}}
+                    <a class="btn btn-outline-secondary mt-1 mb-3" href="{{{viewurl}}}" target="_blank">{{#str}}viewlarge, qtype_answersheet{{/str}}</a>
+                </div>
             </div>
-        </div>
-        <div class="col-12">
-            <div class="d-flex flex-column">
-                {{#audiofiles}}
-                    <div class="d-flex flex-column">
-                        <div>{{name}}</div>
-                        <audio controls src="{{url}}"></audio>
-                    </div>
-                {{/audiofiles}}
-            </div>
-
-            {{#modules}}
-                {{#radiochecked}}
-                    <table class="table table-bordered table-questions radiochecked">
-                        <thead>
-                            <tr>
-                                <th class="fixedwidth-100"></th>
-                                <th class="modulename" colspan="{{{colspan}}}">
-                                    {{{modulename}}}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {{#questions}}
-                            <tr>
-                                <td class="questionname">
-                                    <strong>{{{name}}}</strong>
-                                </td>
-                                {{#answers}}
-                                    <td class="fixedwidth-100 {{additionalclass}}">
-                                        <div class="d-flex flex-column align-items-center">
-                                            <strong>{{label}}</strong>
-                                            <input class="input" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}}>
-                                        </div>
-                                        {{{feedbackimage}}}
-                                    </td>
-                                {{/answers}}
-                                {{#feedback}}
-                                    <td>
-                                        <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
-                                    </td>
-                                {{/feedback}}
-                            </tr>
-                        {{/questions}}
-                        </tbody>
-                    </table>
-                {{/radiochecked}}
-
-                {{#freetext}}
-                    <table class="table table-bordered table-questions freetext">
-                        <thead>
-                            <tr>
-                                <th class="fixedwidth-100"></th>
-                                <th class="modulename">
-                                    {{{modulename}}}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {{#questions}}
-                            <tr>
-                                <td class="questionname">
-                                    <strong>{{{name}}}</strong>
-                                </td>
-                                <td class="{{additionalclass}}">
-                                    <div class="d-flex flex-column align-items-center">
-                                        <input class="input form-control text-500" type="text" value="{{response}}" name="{{id}}">
-                                    </div>
-                                </td>
-                                {{#feedback}}
-                                    <td>
-                                        <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
-                                    </td>
-                                {{/feedback}}
-                            </tr>
-                        {{/questions}}
-                        </tbody>
-                    </table>
-                {{/freetext}}
-
-                {{#letterbyletter}}
-                    <table class="table table-bordered table-questions letterbyletter">
-                        <thead>
-                            <tr>
-                            <th class="fixedwidth-100"></th>
-                                <th class="modulename" colspan="{{{colspan}}}">
-                                    {{{modulename}}}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {{#questions}}
-                            <tr data-region="letterbyletterquestion">
-                                <td class="questionname">
-                                    <strong>{{{name}}}</strong>
-                                    <input type="hidden" name="{{id}}" data-region="hiddeninput" data-id="{{id}}" value="{{response}}">
-                                </td>
-                                {{#answers}}
-                                    <td class="fixedwidth-100 {{additionalclass}}">
-                                        <div class="d-flex flex-column align-items-center">
-                                            <input class="input letterinput" type="text" data-region="letterinput" data-index="{{index}}">
-                                        </div>
-                                        {{{feedbackimage}}}
-                                    </td>
-                                {{/answers}}
-                                {{#feedback}}
-                                    <td>
-                                        <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
-                                    </td>
-                                {{/feedback}}
-                            </tr>
-                        {{/questions}}
-                        </tbody>
-                    </table>
-                {{/letterbyletter}}
-            {{/modules}}
-        </div>
+        {{/pdffiles}}
     </div>
+    <div class="row">
+        {{#audiofiles}}
+            <div class="col-12 col-md-6 my-4">
+                <div class="d-flex flex-column">
+                    <div class="h4 ml-3">{{name}}</div>
+                    <audio controls src="{{url}}"></audio>
+                </div>
+            </div>
+        {{/audiofiles}}
+    </div>
+
+    {{#modules}}
+        {{#radiochecked}}
+            <table class="table table-bordered table-questions radiochecked">
+                <thead>
+                    <tr>
+                        <th class="fixedwidth-100"></th>
+                        <th class="modulename" colspan="{{{colspan}}}">
+                            {{{modulename}}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {{#questions}}
+                    <tr>
+                        <td class="questionname">
+                            <strong>{{{name}}}</strong>
+                        </td>
+                        {{#answers}}
+                            <td class="fixedwidth-100 {{additionalclass}}">
+                                <div class="d-flex flex-column align-items-center">
+                                    <strong>{{label}}</strong>
+                                    <input class="input" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}}>
+                                </div>
+                                {{{feedbackimage}}}
+                            </td>
+                        {{/answers}}
+                        {{#feedback}}
+                            <td>
+                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                            </td>
+                        {{/feedback}}
+                    </tr>
+                    {{#showanswer}}
+                        {{^iscorrect}}
+                            <tr>
+                                <td class=""></td>
+                                <td class="incorrect" colspan="{{{colspan}}}">
+                                    {{#str}}correctanswer, qtype_answersheet, {{{options}}}{{/str}}
+                                </td>
+                            </tr>
+                        {{/iscorrect}}
+                    {{/showanswer}}
+                {{/questions}}
+                </tbody>
+            </table>
+        {{/radiochecked}}
+
+        {{#freetext}}
+            <table class="table table-bordered table-questions freetext">
+                <thead>
+                    <tr>
+                        <th class="fixedwidth-100"></th>
+                        <th class="modulename">
+                            {{{modulename}}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {{#questions}}
+                    <tr>
+                        <td class="questionname">
+                            <strong>{{{name}}}</strong>
+                        </td>
+                        <td class="{{additionalclass}}">
+                            <div class="d-flex flex-column align-items-center">
+                                <input class="input form-control text-500" type="text" value="{{response}}" name="{{id}}">
+                            </div>
+                        </td>
+                        {{#feedback}}
+                            <td>
+                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                            </td>
+                        {{/feedback}}
+                    </tr>
+                    {{#showanswer}}
+                        {{^iscorrect}}
+                            <tr>
+                                <td class=""></td>
+                                <td class="incorrect" colspan="{{{colspan}}}">
+                                    {{#str}}correctanswer, qtype_answersheet, {{{correctanswer}}}{{/str}}
+                                </td>
+                            </tr>
+                        {{/iscorrect}}
+                    {{/showanswer}}
+                {{/questions}}
+                </tbody>
+            </table>
+        {{/freetext}}
+
+        {{#letterbyletter}}
+            <table class="table table-bordered table-questions letterbyletter">
+                <thead>
+                    <tr>
+                    <th class="fixedwidth-100"></th>
+                        <th class="modulename" colspan="{{{colspan}}}">
+                            {{{modulename}}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {{#questions}}
+                    <tr data-region="letterbyletterquestion">
+                        <td class="questionname">
+                            <strong>{{{name}}}</strong>
+                            <input type="hidden" name="{{id}}" data-region="hiddeninput" data-id="{{id}}" value="{{response}}">
+                        </td>
+                        {{#answers}}
+                            <td class="fixedwidth-100 {{additionalclass}}">
+                                <div class="d-flex flex-column align-items-center">
+                                    <input class="input letterinput" type="text" data-region="letterinput" data-index="{{index}}">
+                                </div>
+                                {{{feedbackimage}}}
+                            </td>
+                        {{/answers}}
+                        {{#feedback}}
+                            <td>
+                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                            </td>
+                        {{/feedback}}
+                    </tr>
+                    {{#showanswer}}
+                        {{^iscorrect}}
+                            <tr>
+                                <td class=""></td>
+                                <td class="incorrect" colspan="{{{colspan}}}">
+                                    {{#str}}correctanswer, qtype_answersheet, {{{correctanswer}}}{{/str}}
+                                </td>
+                            </tr>
+                        {{/iscorrect}}
+                    {{/showanswer}}
+                {{/questions}}
+                </tbody>
+            </table>
+        {{/letterbyletter}}
+    {{/modules}}
 </div>
 {{#js}}
 require(['qtype_answersheet/local/questions'], function(questions) {

@@ -56,15 +56,8 @@ class qtype_answersheet extends question_type {
         // text fields. This means we will need to create mock editor structure.
 
         $formjsondata = json_decode($question->newquestion, true);
-        if (!empty($formjsondata)) {
-            answersheet_api::set_records($question->id, $formjsondata);
-        }
+        answersheet_api::set_records($question->id, $formjsondata);
         $modules = answersheet_api::get_data($question->id);
-        $answers = answersheet_answers::get_all_records_for_question($question->id);
-        if (empty($answers)) {
-            $modules = answersheet_api::get_data($question->oldparent);
-            $answers = answersheet_answers::get_all_records_for_question($question->oldparent);
-        }
         $newanswers = [];
         foreach ($modules as $module) {
             $type = answersheet_module::TYPES[$module['type']];
@@ -89,7 +82,6 @@ class qtype_answersheet extends question_type {
             $question->fraction[] = 0;
             $question->feedback[] = $answer['feedback'];
         }
-
         foreach ($question->feedback as $key => $feedbacktext) {
             $feedbacks[] = [
                 'format' => FORMAT_PLAIN,
@@ -276,23 +268,25 @@ class qtype_answersheet extends question_type {
             $answersheetanswerid = $question->answersheetanswer[$key];
             // Create a new answersheet answer if it does not exist.
             $answersheetanswer = answersheet_answers::get_record(['id' => $answersheetanswerid]);
-            $clone = false;
-            $moduleid = $answersheetanswer->get('moduleid');
-            if ($answersheetanswer->get('answerid') > 0) {
-                $answersheetanswer = $answersheetanswer->clone();
-                $clone = true;
-            }
             $answersheetanswer->set('answerid', $answer->id);
-            $answersheetanswer->set('questionid', $question->id);
-
-            $module = answersheet_module::get_record(['id' => $moduleid]);
-            if ($clone) {
-                $module = $module->clone();
-            }
-            $module->set('questionid', $question->id);
-            $module->save();
-            $answersheetanswer->set('moduleid', $module->get('id'));
             $answersheetanswer->save();
+            // $clone = false;
+            // $moduleid = $answersheetanswer->get('moduleid');
+            // if ($answersheetanswer->get('answerid') > 0) {
+            //     $answersheetanswer = $answersheetanswer->clone();
+            //     $clone = true;
+            // }
+            // $answersheetanswer->set('answerid', $answer->id);
+            // $answersheetanswer->set('questionid', $question->id);
+
+            // $module = answersheet_module::get_record(['id' => $moduleid]);
+            // if ($clone) {
+            //     $module = $module->clone();
+            // }
+            // $module->set('questionid', $question->id);
+            // $module->save();
+            // $answersheetanswer->set('moduleid', $module->get('id'));
+            // $answersheetanswer->save();
 
             if ($isextraanswerfields) {
                 // Check, if this answer contains some extra field data.

@@ -120,7 +120,7 @@ class answersheet {
                 'column' => 'feedback',
                 'type' => PARAM_TEXT,
                 'text' => true,
-                'visible' => true,
+                'visible' => false,
                 'canedit' => true,
                 'label' => 'Feedback',
                 'columnid' => 5,
@@ -196,10 +196,10 @@ class answersheet {
         $columns = self::get_column_structure();
         $data = [
             [
-                'moduleid' => 0,
+                'moduleid' => 1,
                 'modulename' => '',
                 'modulesortorder' => 0,
-                'numoptions' => 0,
+                'numoptions' => 4,
                 'type' => 1,
                 'class' => answersheet_module::TYPES[1],
                 'indicator' => 1,
@@ -231,12 +231,7 @@ class answersheet {
      */
     public static function set_records(int $questionid, array $data): void {
         foreach ($data as $module) {
-            $moduleid = $module['id'];
-            $rows = $module['rows'];
-            $mod = answersheet_module::get_record(['id' => $moduleid]);
-            if (!$mod) {
-                $mod = new answersheet_module();
-            }
+            $mod = new answersheet_module();
             $mod->set('name', $module['name']);
             $mod->set('type', $module['type']);
             $mod->set('sortorder', $module['sortorder']);
@@ -244,23 +239,13 @@ class answersheet {
             $mod->set('numoptions', $module['numoptions']);
             $mod->save();
             $moduleid = $mod->get('id');
-            $records = answersheet_answers::get_all_records_for_module($moduleid);
-            foreach ($rows as $row) {
-                $updated = false;
-                foreach ($records as $record) {
-                    if ($record->get('id') == $row['id']) {
-                        self::update_record($record, $row);
-                        $updated = true;
-                    }
-                }
-                if (!$updated) {
-                    $record = new answersheet_answers();
-                    $record->set('questionid', $questionid);
-                    $record->set('moduleid', $moduleid);
-                    $record->set('answerid', 0);
-                    $record->set('sortorder', $row['sortorder']);
-                    self::update_record($record, $row);
-                }
+            foreach ($module['rows'] as $row) {
+                $record = new answersheet_answers();
+                $record->set('questionid', $questionid);
+                $record->set('moduleid', $moduleid);
+                $record->set('answerid', 0);
+                $record->set('sortorder', $row['sortorder']);
+                self::update_record($record, $row);
             }
         }
 
@@ -297,170 +282,5 @@ class answersheet {
             }
         }
         $record->save();
-    }
-
-    /**
-     * Get or create a module
-     * @param string $name
-     * @param int $questionid
-     * @param int $sortorder
-     * @return int $moduleid
-     */
-    public static function get_or_create_module($name, $questionid, $sortorder): int {
-        $module = answersheet_module::get_record(['questionid' => $questionid, 'name' => $name]);
-        if ($module) {
-            return $module->get('id');
-        }
-        return self::create_module($name, $questionid, $sortorder, 1, 0);
-    }
-
-    /**
-     * Create a new module
-     * @param string $name
-     * @param int $questionid
-     * @param int $sortorder
-     * @param int $type
-     * @param int $numoptions
-     * @return int $moduleid
-     */
-    public static function create_module($name, $questionid, $sortorder, $type, $numoptions): int {
-        $module = new answersheet_module();
-        $module->set('questionid', $questionid);
-        $module->set('name', $name);
-        $module->set('sortorder', $sortorder);
-        $module->set('type', $type);
-        $module->set('numoptions', $numoptions);
-        $module->save();
-        return $module->get('id');
-    }
-
-    /**
-     * Delete a programme for a given course
-     * @param int $questionid
-     */
-    public static function delete_programme($questionid): void {
-        $modules = answersheet_module::get_all_records_for_question($questionid);
-        foreach ($modules as $module) {
-            self::delete_module($questionid, $module->get('id'));
-        }
-    }
-
-    /**
-     * Delete a module
-     * @param int $questionid
-     * @param int $moduleid
-     * return bool
-     */
-    public static function delete_module($questionid, $moduleid): bool {
-        $module = answersheet_module::get_record(['id' => $moduleid]);
-        if ($module->get('questionid') == $questionid) {
-            // Delete all rows in this module.
-            $records = answersheet_answers::get_all_records_for_module($moduleid);
-            foreach ($records as $record) {
-                $record->delete();
-            }
-            $module->delete();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Create a new row
-     * @param int $questionid
-     * @param int $moduleid
-     * @param int $prevrowid
-     * @return int $sortorder
-     */
-    public static function create_row($questionid, $moduleid, $prevrowid): int {
-        if (!$moduleid) {
-            $moduleid = self::get_or_create_module('Module', $questionid, 0);
-        }
-        $record = new answersheet_answers();
-        $record->set('answerid', 0);
-        $record->set('moduleid', $moduleid);
-        $record->set('questionid', $questionid);
-        $record->set('sortorder', 0);
-        // Set all other fields to null or ''.
-        $fields = self::get_table_structure();
-        foreach ($fields as $field) {
-            if ($field['field'] == 'int') {
-                $record->set($field['column'], null);
-            } else if ($field['field'] == 'float') {
-                $record->set($field['column'], null);
-            } else {
-                $record->set($field['column'], '');
-            }
-        }
-        $record->save();
-        self::update_sort_order('row', $moduleid, $record->get('id'), $prevrowid);
-        return $record->get('id');
-    }
-
-    /**
-     * Delete a row
-     * @param int $questionid
-     * @param int $rowid
-     * @return bool
-     */
-    public static function delete_row($questionid, $rowid): bool {
-        $record = answersheet_answers::get_record(['id' => $rowid]);
-        if ($record->get('questionid') == $questionid) {
-            $record->delete();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Update the sort order
-     * @param string $type
-     * @param int $moduleid
-     * @param int $id
-     * @param int $previd
-     */
-    public static function update_sort_order($type, $moduleid, $id, $previd): void {
-        if ($type == 'row') {
-            $newrecord = answersheet_answers::get_record(['id' => $id]);
-            // In case the row is moved to the top.
-            if (!$previd) {
-                $newrecord->set('sortorder', 0);
-                $newrecord->set('moduleid', $moduleid);
-                $newrecord->save();
-                $records = answersheet_answers::get_all_records_for_module($moduleid);
-                $sortorder = 0;
-                foreach ($records as $record) {
-                    if ($record->get('id') == $id) {
-                        continue;
-                    }
-                    $sortorder++;
-                    $record->set('sortorder', $sortorder);
-                    $record->save();
-                }
-                return;
-            }
-            $prevrecord = answersheet_answers::get_record(['id' => $previd]);
-            $records = answersheet_answers::get_all_records_for_module($prevrecord->get('moduleid'));
-            $sortorder = 0;
-            foreach ($records as $record) {
-                if ($record->get('id') == $id) {
-                    continue;
-                }
-                if ($record->get('id') == $previd) {
-                    $sortorder = $record->get('sortorder');
-                    // Update the remaining records, depending on the action.
-                    $sortorder++;
-                    $newrecord->set('sortorder', $sortorder);
-                    $newrecord->set('moduleid', $moduleid);
-                    $newrecord->save();
-                    continue;
-                }
-                if ($sortorder) {
-                    $sortorder++;
-                    $record->set('sortorder', $sortorder);
-                    $record->save();
-                }
-            }
-        }
     }
 }

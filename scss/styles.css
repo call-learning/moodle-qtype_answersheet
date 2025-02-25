@@ -48,13 +48,6 @@
       outline: 1px solid #7fb6f1;
       background-color: #f7f7f7;
       border-radius: 0rem; }
-      .answersheet .programm-input:focus[type="text"] {
-        position: absolute;
-        top: 1px;
-        left: 1px;
-        bottom: 0;
-        width: 200%;
-        z-index: 2; }
   .answersheet .float .programm-input,
   .answersheet .int .programm-input {
     min-width: 50px;
@@ -106,8 +99,8 @@
         width: 50px; }
       .answersheet .programm-table.editor th.answer,
       .answersheet .programm-table.editor th.feedback {
-        width: 250px;
-        max-width: 250px; }
+        width: 400px;
+        max-width: 400px; }
     .answersheet .programm-table.standard td,
     .answersheet .programm-table.standard th {
       padding: 0.5rem;

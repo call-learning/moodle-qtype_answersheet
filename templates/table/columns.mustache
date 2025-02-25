@@ -271,7 +271,9 @@
 {{/mustacheonly}}
 {{#columns}}
     {{#editor}}
-        <th class="{{#float}}float {{/float}}{{#int}}int {{/int}}{{column}}">{{{label}}}</th>
+        {{#visible}}
+            <th class="{{#float}}float {{/float}}{{#int}}int {{/int}}{{column}}">{{{label}}}</th>
+        {{/visible}}
     {{/editor}}
     {{^editor}}
         {{#visible}}

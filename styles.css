@@ -1,0 +1,328 @@
+.answersheet {
+    height: 100%;
+}
+
+.answersheet .saveconfirm {
+    margin-left: 0rem;
+    margin-top: -1.5px;
+}
+
+.answersheet .saveconfirm .icon {
+    color: #9f9f9f;
+}
+
+.answersheet .saveconfirm .btn .savingicon {
+    display: none;
+}
+
+.answersheet .saveconfirm .btn.saving .defaulticon {
+    display: none;
+}
+
+.answersheet .saveconfirm .btn.saving .savingicon {
+    display: inline-block;
+}
+
+.answersheet {
+    overflow: auto;
+    height: 100%;
+}
+
+.answersheet .module-input {
+    border-radius: 0;
+    border: 1px solid #dee2e6;
+    width: 300px;
+}
+
+.answersheet .module-type {
+    border-radius: 0;
+    border: 1px solid #dee2e6;
+    width: 150px;
+}
+
+.answersheet .plusminusbuttons {
+    background-color: #f7f7f7;
+    border-radius: 10px;
+    margin-left: 0.5rem;
+}
+
+.answersheet .programm-input {
+    display: block;
+    width: 100%;
+    min-width: 70px;
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.125rem;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 0;
+    border-radius: 0rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.answersheet .programm-input::placeholder, .answersheet .programm-input::-webkit-input-placeholder {
+    color: #d7d7d8;
+}
+
+.answersheet .programm-input:focus {
+    outline: 1px solid #7fb6f1;
+    background-color: #f7f7f7;
+    border-radius: 0rem;
+}
+
+.answersheet .float .programm-input,
+.answersheet .int .programm-input {
+    min-width: 50px;
+    width: 50px;
+    max-width: 50px;
+}
+
+.answersheet .programm-table {
+    max-width: 100%;
+    overflow: visible;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.answersheet .programm-table input[type="number"] {
+    /* For most modern browsers */
+    -moz-appearance: textfield;
+    /* Firefox */
+    -webkit-appearance: none;
+    /* Chrome, Safari, Edge */
+    appearance: none;
+}
+
+.answersheet .programm-table input[type="number"]::-webkit-inner-spin-button,
+.answersheet .programm-table input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    /* Optional: Prevent additional spacing */
+}
+
+.answersheet .programm-table .readonly input,
+.answersheet .programm-table .readonly select {
+    background-color: #f7f7f7;
+    border: 0;
+}
+
+.answersheet .programm-table.editor {
+    border-left: 1px solid #dee2e6;
+}
+
+.answersheet .programm-table.editor th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0.4rem;
+}
+
+.answersheet .programm-table.editor th.float, .answersheet .programm-table.editor th.int {
+    background-color: #f7f7f7;
+    width: 10px;
+}
+
+.answersheet .programm-table.editor th,
+.answersheet .programm-table.editor td {
+    border-top: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    position: relative;
+}
+
+.answersheet .programm-table.editor th.actions,
+.answersheet .programm-table.editor td.actions {
+    display: flex;
+}
+
+.answersheet .programm-table.editor th.int,
+.answersheet .programm-table.editor td.int {
+    width: 52px;
+    max-width: 52px;
+}
+
+.answersheet .programm-table.editor th.name {
+    width: 50px;
+}
+
+.answersheet .programm-table.editor th.answer,
+.answersheet .programm-table.editor th.feedback {
+    width: 400px;
+    max-width: 400px;
+}
+
+.answersheet .programm-table.standard td,
+.answersheet .programm-table.standard th {
+    padding: 0.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.answersheet .programm-table.standard th.float, .answersheet .programm-table.standard th.int {
+    background-color: #f7f7f7;
+    width: 50px;
+}
+
+.answersheet td:focus {
+    outline: 1px solid #7fb6f1;
+}
+
+.answersheet .formarrow {
+    display: block;
+    top: 0;
+    right: 0;
+    position: absolute;
+}
+
+.answersheet .formarrow::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: -12px;
+    width: 0;
+    height: 0;
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-left: 12px solid #ffffff;
+    z-index: 2;
+}
+
+.answersheet .formarrow::after {
+    content: '';
+    position: absolute;
+    top: 7px;
+    right: -13px;
+    width: 0;
+    height: 0;
+    border-top: 13px solid transparent;
+    border-bottom: 13px solid transparent;
+    border-left: 13px solid var(--light);
+}
+
+.answersheet .modules th.numoptions,
+.answersheet .modules td.numoptions {
+    display: none;
+}
+
+.answersheet .modules.letterbyletter th.options,
+.answersheet .modules.letterbyletter td.options,
+.answersheet .modules.freetext th.options,
+.answersheet .modules.freetext td.options {
+    display: none;
+}
+
+.answersheet .modules.radiochecked th.answer,
+.answersheet .modules.radiochecked td.answer {
+    display: none;
+}
+
+.answersheet .docpdf {
+    max-height: 600px;
+}
+
+.modal .modal-answersheet .close {
+    margin-left: -0.5px;
+}
+
+.modal .modal-answersheet .uploadbutton {
+    margin-left: auto;
+}
+
+.modal .modal-answersheet .uploadbutton .icon {
+    color: #9f9f9f;
+}
+
+.answersheet_question table th {
+    margin: 0.2rem;
+}
+
+.answersheet_question table input.input {
+    margin: 0.2rem;
+}
+
+.answersheet_question table tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.answersheet_question .tab-content {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.answersheet_question audio {
+    margin-bottom: 1.5rem;
+}
+
+.answersheet_question .table-questions {
+    background-color: #fff;
+    width: auto;
+}
+
+.answersheet_question .table-questions th,
+.answersheet_question .table-questions td {
+    background-color: #ffffff;
+    padding: 0.25rem;
+    border-color: #8d8d8d;
+}
+
+.answersheet_question .table-questions td.fixedwidth-100,
+.answersheet_question .table-questions th.fixedwidth-100 {
+    width: 50px;
+    max-width: 50px;
+}
+
+.answersheet_question .table-questions th {
+    border-bottom: 0;
+}
+
+.answersheet_question .table-questions td.questionname {
+    text-align: center;
+    font-weight: bold;
+    vertical-align: middle;
+    font-size: 1.1rem;
+    width: 60px;
+    min-width: 60px;
+}
+
+.answersheet_question .table-questions td.incorrect {
+    background-color: #f8d7da;
+}
+
+.answersheet_question .table-questions td.correct {
+    background-color: #d4edda;
+}
+
+.answersheet_question .table-questions .text-500 {
+    width: 500px;
+}
+
+.answersheet_question .table-questions.letterbyletter td.fixedwidth-100 {
+    width: 50px;
+    max-width: 50px;
+}
+
+.answersheet_question .table-questions.letterbyletter td.fixedwidth-100 input.letterinput {
+    width: 100%;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+@media (min-width: 768px) {
+    body.limitedwidth.path-mod-quiz #page.drawers .main-inner {
+        max-width: 1440px;
+    }
+}
+
+body.answersheet-embed .fulleverything {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background-color: #fff;
+}
