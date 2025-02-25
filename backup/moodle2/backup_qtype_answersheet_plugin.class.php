@@ -36,13 +36,22 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         $qtypeobj = question_bank::get_qtype($this->pluginname);
         $qtypename = $qtypeobj->name();
 
-        // Parts.
-        $parts = new backup_nested_element('parts');
-        $part = new backup_nested_element('part', array('id'),
-            array('start', 'name', 'usermodified', 'timecreated', 'timemodified'));
-        $pluginwrapper->add_child($parts);
-        $parts->add_child($part);
-        $part->set_source_table("qtype_{$qtypename}_parts",
+        // Modules
+        $modules = new backup_nested_element('modules');
+        $module = new backup_nested_element('module', ['id'],
+            ['name', 'type', 'sortorder', 'numoptions', 'usermodified', 'timecreated', 'timemodified']);
+        $pluginwrapper->add_child($modules);
+        $modules->add_child($module);
+        $module->set_source_table("qtype_{$qtypename}_module",
+            array('questionid' => backup::VAR_PARENTID));
+
+        // AnswersheetAnswers
+        $answers = new backup_nested_element('aanswers');
+        $answer = new backup_nested_element('aanswer', ['id'],
+            ['name', 'options', 'answer', 'feedback', 'sortorder', 'usermodified', 'timecreated', 'timemodified']);
+        $pluginwrapper->add_child($answers);
+        $answers->add_child($answer);
+        $answer->set_source_table("qtype_{$qtypename}_answers",
             array('questionid' => backup::VAR_PARENTID));
 
         // Docs.

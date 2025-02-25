@@ -67,4 +67,4 @@ $string['save'] = 'Save';
 $string['saving'] = 'Saving...';
 $string['startnumbering'] = 'Start numbering';
 $string['type'] = 'Type';
-$string['viewlarge'] = 'View large';
+$string['viewlarge'] = 'Fullscreen';
