@@ -28,6 +28,7 @@ use qtype_renderer;
 use qtype_with_combined_feedback_renderer;
 use question_attempt;
 use question_display_options;
+use qtype_answersheet\local\persistent\answersheet_answers;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -42,6 +43,10 @@ defined('MOODLE_INTERNAL') || die();
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends qtype_with_combined_feedback_renderer {
+    /**
+     * @var array $aanwers
+     */
+    public $aanswers = null;
 
     /**
      * Generates the display of the formulation part of the question. This is the
@@ -87,11 +92,36 @@ class renderer extends qtype_with_combined_feedback_renderer {
         $textresponses = [];
         $index = 1;
         foreach ($qa->get_question()->answers as $answerkey => $answerinfo) {
-            $answertypetext = get_string('option', 'qtype_answersheet', $answerinfo->answer);
-            $textresponses[] = "{$index} -> $answertypetext";
+            $aanswer = $this->get_aanswer($qa, $answerinfo->id);
+
+            $option = $aanswer->get('options');
+            $name = $aanswer->get('name');
+            $questionname = ($name != '') ? $name : $index;
+            $currentresponse = ($option != '') ? $option : $answerinfo->answer;
+
+            $answertypetext = get_string('option', 'qtype_answersheet', $currentresponse);
+            $textresponses[] = "{$questionname} -> $answertypetext";
             $index++;
         }
         return get_string('correctansweris', 'qtype_shortanswer',
             s(join(', ', $textresponses)));
+    }
+
+    /**
+     * Find the aanswer for this answer
+     * @param question_attempt $qa
+     * @param int $answerid
+     * @return object
+     */
+    public function get_aanswer(question_attempt $qa, int $answerid) {
+        if (is_null($this->aanswers)) {
+            $this->aanswers = answersheet_answers::get_all_records_for_question($qa->get_question()->id);
+        }
+        foreach ($this->aanswers as $aanswer) {
+            if ($aanswer->get('answerid') == $answerid) {
+                return $aanswer;
+            }
+        }
+        return null;
     }
 }

@@ -22,6 +22,8 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+ use qtype_answersheet\local\persistent\answersheet_answers;
+
 defined('MOODLE_INTERNAL') || die();
 
 // For a complete list of base question classes please examine the file
@@ -38,6 +40,11 @@ class qtype_answersheet_question extends question_graded_automatically {
      * @var array $answers
      */
     public $answers = null;
+
+    /**
+     * @var array $aanwers
+     */
+    public $penalty = 0.1;
 
     /**
      * Returns data to be included in the form submission.
@@ -152,6 +159,7 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function summarise_response(array $response) {
         $textresponses = [];
         $index = 1;
+        $aanswers = answersheet_answers::get_all_records_for_question($this->id);
         foreach ($this->answers as $answerkey => $answerinfo) {
             $currentresponse = $this->get_response_value($answerkey, $response);
             if (is_null($currentresponse)) {

@@ -376,14 +376,15 @@ class Manager {
         const rowid = btn.closest('[data-row]').dataset.index;
         const moduleid = btn.closest('[data-region="module"]').dataset.id;
         const module = modules.find(m => m.moduleid == moduleid);
-        const index = module.rows.findIndex(r => r.id == rowid);
-        module.rows.splice(index, 1);
-        this.resetRowSortorder();
-        State.setValue('modules', modules);
+        if (module.rows.length > 1) {
+            const index = module.rows.findIndex(r => r.id == rowid);
+            module.rows.splice(index, 1);
+            this.resetRowSortorder();
+            State.setValue('modules', modules);
+        }
         return new Promise((resolve) => {
             resolve(rowid);
         });
-
     }
 
     /**

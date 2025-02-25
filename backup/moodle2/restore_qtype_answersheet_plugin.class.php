@@ -64,7 +64,7 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
      *
      * @param array|object $data Drag and drop drops data to work with.
      */
-    public function process_aanswer($data) {
+    public function process_aanswers($data) {
         $this->do_process_element('aanswer', $data);
     }
 

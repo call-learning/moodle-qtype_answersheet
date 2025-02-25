@@ -37,8 +37,8 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         $qtypename = $qtypeobj->name();
 
         // Modules
-        $modules = new backup_nested_element('modules');
-        $module = new backup_nested_element('module', ['id'],
+        $modules = new backup_nested_element('module');
+        $module = new backup_nested_element('mod', ['id'],
             ['name', 'type', 'sortorder', 'numoptions', 'usermodified', 'timecreated', 'timemodified']);
         $pluginwrapper->add_child($modules);
         $modules->add_child($module);
