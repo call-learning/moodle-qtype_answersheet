@@ -216,6 +216,25 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025020601, 'qtype', 'answersheet');
     }
 
+    if ($oldversion < 2025081301) {
+
+        // Define key questionid-fk (foreign-unique) to be added to qtype_answersheet_module.
+        $table = new xmldb_table('qtype_answersheet_module');
+        $key = new xmldb_key('questionidfk', XMLDB_KEY_FOREIGN, ['questionid'], 'question', ['id']);
+
+        // Launch add key questionid-fk.
+        $dbman->add_key($table, $key);
+
+
+        // Define key questionid-fk (foreign-unique) to be added to qtype_answersheet_module.
+        $table = new xmldb_table('qtype_answersheet_answers');
+        $key = new xmldb_key('questionidfk', XMLDB_KEY_FOREIGN, ['questionid'], 'question', ['id']);
+        // Launch add key questionid-fk.
+        $dbman->add_key($table, $key);
+
+        // Answersheet savepoint reached.
+        upgrade_plugin_savepoint(true, 2025081301, 'qtype', 'answersheet');
+    }
 
     return true;
 }
