@@ -34,8 +34,8 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $elename = 'module';
         $elepath = $this->get_pathfor('/modules/mod'); // We used get_recommended_name() so this works.
         $paths[] = new restore_path_element($elename, $elepath);
-        $elename = 'aanswers';
-        $elepath = $this->get_pathfor('/aanswers/aanswer'); // We used get_recommended_name() so this works.
+        $elename = 'answers';
+        $elepath = $this->get_pathfor('/answers/answer'); // We used get_recommended_name() so this works.
         $paths[] = new restore_path_element($elename, $elepath);
         $elename = 'doc';
         $elepath = $this->get_pathfor('/docs/doc'); // We used get_recommended_name() so this works.
@@ -60,12 +60,12 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
     }
 
     /**
-     * Process the aanswer element.
+     * Process the answer element.
      *
      * @param array|object $data Drag and drop drops data to work with.
      */
-    public function process_aanswers($data) {
-        $this->do_process_element('aanswer', $data);
+    public function process_answers($data) {
+        $this->do_process_element('answer', $data);
     }
 
     /**
@@ -75,6 +75,15 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
      */
     public function process_doc($data) {
         $this->do_process_element('docs', $data);
+    }
+
+    /**
+     * Process the module element.
+     *
+     * @param array|object $data Data related to the module being restored.
+     */
+    public function process_module($data) {
+        $this->do_process_element('module', $data);
     }
 
     /**

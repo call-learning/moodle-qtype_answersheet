@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qtype_answersheet';
-$plugin->release = '0.1.0';
-$plugin->version = 2025020601;
+$plugin->release = '0.1.1';
+$plugin->version = 2025020602;
 $plugin->requires = 2020061500;
 $plugin->maturity = MATURITY_ALPHA;

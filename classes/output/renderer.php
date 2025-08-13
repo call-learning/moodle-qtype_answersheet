@@ -46,7 +46,7 @@ class renderer extends qtype_with_combined_feedback_renderer {
     /**
      * @var array $aanwers
      */
-    public $aanswers = null;
+    public $answers = null;
 
     /**
      * Generates the display of the formulation part of the question. This is the
@@ -92,10 +92,10 @@ class renderer extends qtype_with_combined_feedback_renderer {
         $textresponses = [];
         $index = 1;
         foreach ($qa->get_question()->answers as $answerkey => $answerinfo) {
-            $aanswer = $this->get_aanswer($qa, $answerinfo->id);
+            $answer = $this->get_answer($qa, $answerinfo->id);
 
-            $option = $aanswer->get('options');
-            $name = $aanswer->get('name');
+            $option = $answer->get('options');
+            $name = $answer->get('name');
             $questionname = ($name != '') ? $name : $index;
             $currentresponse = ($option != '') ? $option : $answerinfo->answer;
 
@@ -108,18 +108,18 @@ class renderer extends qtype_with_combined_feedback_renderer {
     }
 
     /**
-     * Find the aanswer for this answer
+     * Find the answer for this answer
      * @param question_attempt $qa
      * @param int $answerid
      * @return object
      */
-    public function get_aanswer(question_attempt $qa, int $answerid) {
-        if (is_null($this->aanswers)) {
-            $this->aanswers = answersheet_answers::get_all_records_for_question($qa->get_question()->id);
+    public function get_answer(question_attempt $qa, int $answerid) {
+        if (is_null($this->answers)) {
+            $this->answers = answersheet_answers::get_all_records_for_question($qa->get_question()->id);
         }
-        foreach ($this->aanswers as $aanswer) {
-            if ($aanswer->get('answerid') == $answerid) {
-                return $aanswer;
+        foreach ($this->answers as $answer) {
+            if ($answer->get('answerid') == $answerid) {
+                return $answer;
             }
         }
         return null;

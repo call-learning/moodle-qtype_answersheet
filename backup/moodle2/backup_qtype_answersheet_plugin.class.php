@@ -46,8 +46,8 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
             array('questionid' => backup::VAR_PARENTID));
 
         // AnswersheetAnswers
-        $answers = new backup_nested_element('aanswers');
-        $answer = new backup_nested_element('aanswer', ['id'],
+        $answers = new backup_nested_element('answers');
+        $answer = new backup_nested_element('answer', ['id'],
             ['name', 'options', 'answer', 'feedback', 'sortorder', 'usermodified', 'timecreated', 'timemodified']);
         $pluginwrapper->add_child($answers);
         $answers->add_child($answer);

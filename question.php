@@ -159,7 +159,7 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function summarise_response(array $response) {
         $textresponses = [];
         $index = 1;
-        $aanswers = answersheet_answers::get_all_records_for_question($this->id);
+        $answers = answersheet_answers::get_all_records_for_question($this->id);
         foreach ($this->answers as $answerkey => $answerinfo) {
             $currentresponse = $this->get_response_value($answerkey, $response);
             if (is_null($currentresponse)) {
