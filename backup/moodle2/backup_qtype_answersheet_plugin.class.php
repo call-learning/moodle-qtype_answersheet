@@ -28,6 +28,19 @@ defined('MOODLE_INTERNAL') || die();
  */
 class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
     /**
+     * Returns one array with filearea => mappingname elements for the qtype
+     *
+     * @return array
+     */
+    public static function get_qtype_fileareas() {
+        $basic = array_fill_keys(utils::get_basic_fileareas(), 'question_created');
+        return array_merge(
+            $basic,
+            ['audio' => 'qtype_answersheet_docs', 'document' => 'qtype_answersheet_docs']
+        );
+    }
+
+    /**
      * Returns the qtype information to attach to question element.
      */
     protected function define_question_plugin_structure() {
@@ -36,43 +49,71 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         $qtypeobj = question_bank::get_qtype($this->pluginname);
         $qtypename = $qtypeobj->name();
 
-        // Modules
-        $modules = new backup_nested_element('module');
-        $module = new backup_nested_element('mod', ['id'],
-            ['name', 'type', 'sortorder', 'numoptions', 'usermodified', 'timecreated', 'timemodified']);
+        // Modules.
+        $modules = new backup_nested_element('modules');
+        $module = new backup_nested_element(
+            'module',
+            ['id'],
+            [
+                'questionid',
+                'sortorder',
+                'name',
+                'type',
+                'numoptions',
+                'usermodified',
+                'timecreated',
+                'timemodified'
+            ]
+        );
         $pluginwrapper->add_child($modules);
         $modules->add_child($module);
-        $module->set_source_table("qtype_{$qtypename}_module",
-            array('questionid' => backup::VAR_PARENTID));
+        $module->set_source_table(
+            "qtype_{$qtypename}_module",
+            ['questionid' => backup::VAR_PARENTID]
+        );
 
-        // AnswersheetAnswers
-        $answers = new backup_nested_element('answers');
-        $answer = new backup_nested_element('answer', ['id'],
-            ['name', 'options', 'answer', 'feedback', 'sortorder', 'usermodified', 'timecreated', 'timemodified']);
+        // Answersheet Answers.
+        $answers = new backup_nested_element('asanswers');
+        $answer = new backup_nested_element(
+            'asanswer',
+            ['id'],
+            [
+                'answerid',
+                'questionid',
+                'moduleid',
+                'sortorder',
+                'name',
+                'numoptions',
+                'options',
+                'answer',
+                'feedback',
+                'usermodified',
+                'timecreated',
+                'timemodified'
+            ]
+        );
         $pluginwrapper->add_child($answers);
         $answers->add_child($answer);
-        $answer->set_source_table("qtype_{$qtypename}_answers",
-            array('questionid' => backup::VAR_PARENTID));
+        $answer->set_source_table(
+            "qtype_{$qtypename}_answers",
+            ['questionid' => backup::VAR_PARENTID]
+        );
+        $answer->annotate_ids('question_answers', 'answerid');
+        $answer->annotate_ids('module', 'moduleid');
 
         // Docs.
         $docs = new backup_nested_element('docs');
-        $doc = new backup_nested_element('doc', array('id'),
-            array('name', 'type', 'sortorder', 'usermodified', 'timecreated', 'timemodified'));
+        $doc = new backup_nested_element(
+            'doc',
+            ['id'],
+            ['name', 'type', 'sortorder', 'usermodified', 'timecreated', 'timemodified']
+        );
         $pluginwrapper->add_child($docs);
         $docs->add_child($doc);
-        $doc->set_source_table("qtype_{$qtypename}_docs",
-            array('questionid' => backup::VAR_PARENTID));
-        return $plugin;
-    }
-    /**
-     * Returns one array with filearea => mappingname elements for the qtype
-     *
-     * @return array
-     */
-    public static function get_qtype_fileareas() {
-        $basic = array_fill_keys(utils::get_basic_fileareas(), 'question_created');
-        return array_merge($basic,
-            ['audio' => 'qtype_answersheet_docs', 'document' => 'qtype_answersheet_docs']
+        $doc->set_source_table(
+            "qtype_{$qtypename}_docs",
+            ['questionid' => backup::VAR_PARENTID]
         );
+        return $plugin;
     }
 }

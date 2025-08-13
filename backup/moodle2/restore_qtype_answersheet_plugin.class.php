@@ -34,8 +34,8 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $elename = 'module';
         $elepath = $this->get_pathfor('/modules/mod'); // We used get_recommended_name() so this works.
         $paths[] = new restore_path_element($elename, $elepath);
-        $elename = 'answers';
-        $elepath = $this->get_pathfor('/answers/answer'); // We used get_recommended_name() so this works.
+        $elename = 'asanswer';
+        $elepath = $this->get_pathfor('/asanswers/asanswer'); // We used get_recommended_name() so this works.
         $paths[] = new restore_path_element($elename, $elepath);
         $elename = 'doc';
         $elepath = $this->get_pathfor('/docs/doc'); // We used get_recommended_name() so this works.
@@ -50,13 +50,20 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
     public function process_answersheet($data) {
         $this->really_process_extra_question_fields($data);
     }
+
     /**
-     * Process the parts element.
+     * Process the module element.
      *
-     * @param array|object $data Drag and drop drops data to work with.
+     * @param array|object $data Data related to the module being restored.
      */
-    public function process_modules($data) {
-        $this->do_process_element('module', $data);
+    public function process_module($data) {
+        global $DB;
+        $data = (object)$data;
+        $oldid = $data->id;
+        $data->questionid = $this->get_new_parentid('question');
+        $data->usermodified = $this->get_mappingid('user', $data->usermodified);
+        $newitemid = $DB->insert_record('qtype_answersheet_modules', $data);
+        $this->set_mapping('module', $oldid, $newitemid);
     }
 
     /**
@@ -64,8 +71,16 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
      *
      * @param array|object $data Drag and drop drops data to work with.
      */
-    public function process_answers($data) {
-        $this->do_process_element('answer', $data);
+    public function process_asanswer($data) {
+        global $DB;
+        $data = (object)$data;
+        $oldid = $data->id;
+        $data->questionid = $this->get_new_parentid('question');
+        $data->answerid = $this->get_mappingid('question_answers', $data->answerid);
+        $data->moduleid = $this->get_mappingid('module', $data->moduleid);
+        $data->usermodified = $this->get_mappingid('user', $data->usermodified);
+        $newitemid = $DB->insert_record('qtype_answersheet_answers', $data);
+        $this->set_mapping('asanswer', $oldid, $newitemid);
     }
 
     /**
@@ -74,47 +89,12 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
      * @param array|object $data Drag and drop drops data to work with.
      */
     public function process_doc($data) {
-        $this->do_process_element('docs', $data);
-    }
-
-    /**
-     * Process the module element.
-     *
-     * @param array|object $data Data related to the module being restored.
-     */
-    public function process_module($data) {
-        $this->do_process_element('module', $data);
-    }
-
-    /**
-     * Do the processing of docs and parts
-     *
-     * @param string $subelementname
-     * @param object $data
-     * @throws coding_exception
-     */
-    protected function do_process_element($subelementname, $data) {
-        $qtypeobj = question_bank::get_qtype($this->pluginname);
-        $qtypename = $qtypeobj->name();
-
-        $prefix = 'qtype_'.$qtypename.'_'.$subelementname;
-
+        global $DB;
         $data = (object)$data;
         $oldid = $data->id;
-
-        // Detect if the question is created or mapped.
-        $oldquestionid   = $this->get_old_parentid('question');
-        $newquestionid   = $this->get_new_parentid('question');
-        $questioncreated = $this->get_mappingid('question_created', $oldquestionid) ? true : false;
-
-        if ($questioncreated) {
-            global $DB;
-            $data->questionid = $newquestionid;
-            // Insert record.
-            // TODO: use the persistent.
-            $newitemid = $DB->insert_record($prefix, $data);
-            // Create mapping (there are files and states based on this).
-            $this->set_mapping("{$prefix}", $oldid, $newitemid);
-        }
+        $data->questionid = $this->get_new_parentid('question');
+        $data->usermodified = $this->get_mappingid('user', $data->usermodified);
+        $newitemid = $DB->insert_record('qtype_answersheet_docs', $data);
+        $this->set_mapping('doc', $oldid, $newitemid);
     }
 }
