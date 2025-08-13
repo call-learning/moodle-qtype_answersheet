@@ -55,7 +55,8 @@ function get_docfile_url($files, $qubaid, $slot) {
                 $file->get_filearea(),
                 "$qubaid/$slot/{$file->get_itemid()}",
                 $file->get_filepath(),
-                $file->get_filename());
+                $file->get_filename()
+            );
             return $url->out();
         }
     }
@@ -63,13 +64,18 @@ function get_docfile_url($files, $qubaid, $slot) {
 
 $PAGE->set_heading($SITE->fullname);
 $fs = get_file_storage();
-$files = $fs->get_area_files($qcid, 'qtype_answersheet',
-            'document', $docid, 'id');
+$files = $fs->get_area_files(
+    $qcid,
+    'qtype_answersheet',
+    'document',
+    $docid,
+    'id'
+);
 $url = get_docfile_url($files, $qubaid, $slot);
 
 echo $OUTPUT->header();
 if ($url) {
-echo '<object id="documentpdf-{{uniqid}}" data="' . $url . '" type="application/pdf" class="fulleverything">
+    echo '<object id="documentpdf-{{uniqid}}" data="' . $url . '" type="application/pdf" class="fulleverything">
         <param name="src" value="' . $url . '"/>
     </object>';
 } else {

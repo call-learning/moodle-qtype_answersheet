@@ -14,29 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-/**
- * The editing form for answersheet question type is defined here.
- *
- * @package     qtype_answersheet
- * @copyright   2021 Laurent David <laurent@call-learning.fr>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 use qtype_answersheet\answersheet_docs;
 use qtype_answersheet\utils;
 use qtype_answersheet\output\answersheet;
 use qtype_answersheet\output\sheet_renderer;
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * answersheet question editing form defition.
  *
  * You should override functions as necessary from the parent class located at
  * /question/type/edit_question_form.php.
+ *
+ * @package     qtype_answersheet
+ * @copyright   2021 Laurent David <laurent@call-learning.fr>
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_answersheet_edit_form extends question_edit_form {
-
     /**
      * Returns the question type name.
      *
@@ -55,13 +48,20 @@ class qtype_answersheet_edit_form extends question_edit_form {
         global $PAGE, $OUTPUT;
         $this->add_documents_fields();
 
-        $mform->addElement('text', 'startnumbering',
-            get_string('startnumbering', 'qtype_answersheet'));
+        $mform->addElement(
+            'text',
+            'startnumbering',
+            get_string('startnumbering', 'qtype_answersheet')
+        );
         $mform->setType('startnumbering', PARAM_INT);
 
         $id = optional_param('id', 0, PARAM_INT);
-        $mform->addElement('header', 'answerhdr',
-        get_string('answers', 'question'), '');
+        $mform->addElement(
+            'header',
+            'answerhdr',
+            get_string('answers', 'question'),
+            ''
+        );
         $mform->setExpanded('answerhdr', 1);
         $renderer = new sheet_renderer($PAGE, $OUTPUT);
         $programm = new answersheet($id);
@@ -105,7 +105,7 @@ class qtype_answersheet_edit_form extends question_edit_form {
             return $question;
         }
         if (!isset($question->feedback)) {
-            $question->feedback = array();
+            $question->feedback = [];
         }
         $key = 0;
         foreach ($question->options->answers as $answer) {
@@ -113,12 +113,12 @@ class qtype_answersheet_edit_form extends question_edit_form {
                 // Prepare the feedback editor to display files in draft area.
                 $draftitemid = file_get_submitted_draft_itemid('answer[' . $key . ']');
                 $question->answer[$key]['text'] = file_prepare_draft_area(
-                    $draftitemid,          // Draftid.
-                    $this->context->id,    // Context.
-                    'question',            // Component.
-                    'answer',              // Filarea.
+                    $draftitemid, // Draftid.
+                    $this->context->id, // Context.
+                    'question', // Component.
+                    'answer', // Filarea.
                     !empty($answer->id) ? (int) $answer->id : null, // Itemid.
-                    $this->fileoptions,    // Options.
+                    $this->fileoptions, // Options.
                     $answer->answer        // Text.
                 );
                 $question->answer[$key]['itemid'] = $draftitemid;
@@ -172,24 +172,32 @@ class qtype_answersheet_edit_form extends question_edit_form {
                     require_sesskey();
                 }
                 $docsforthisquestion = \qtype_answersheet\answersheet_docs::get_records(
-                    array('questionid' => $question->id, 'type' => $type),
+                    ['questionid' => $question->id, 'type' => $type],
                     'sortorder'
                 );
                 foreach (array_values($docsforthisquestion) as $index => $doc) {
                     $draftitemid = $draftitemids[$index] ?? 0;
-                    file_prepare_draft_area($draftitemid, $this->context->id, 'qtype_answersheet',
-                        $area, $doc->get('id'),
-                        utils::file_manager_options($area));
+                    file_prepare_draft_area(
+                        $draftitemid,
+                        $this->context->id,
+                        'qtype_answersheet',
+                        $area,
+                        $doc->get('id'),
+                        utils::file_manager_options($area)
+                    );
                     // Remove draft aread if empty.
                     $currentdraftcontent = file_get_drafarea_files($draftitemid);
                     if (empty($currentdraftcontent->list)) {
                         $doc->delete();
-                        $fs->delete_area_files($question->contextid, 'qtype_answersheet',
-                            $area, $doc->get('sortorder'));
+                        $fs->delete_area_files(
+                            $question->contextid,
+                            'qtype_answersheet',
+                            $area,
+                            $doc->get('sortorder')
+                        );
                     } else {
                         $question->{$area}[] = $draftitemid;
                     }
-
                 }
             }
             answersheet_docs::add_data($question);
@@ -207,15 +215,30 @@ class qtype_answersheet_edit_form extends question_edit_form {
      *      Default QUESTION_NUMANS_START.
      * @param $addoptions the number of answer blanks to add. Default QUESTION_NUMANS_ADD.
      */
-    protected function add_per_answer_fields(&$mform, $label, $gradeoptions,
-            $minoptions = QUESTION_NUMANS_START, $addoptions = QUESTION_NUMANS_ADD) {
-        $mform->addElement('header', 'answerhdr',
-                get_string('answers', 'question'), '');
+    protected function add_per_answer_fields(
+        &$mform,
+        $label,
+        $gradeoptions,
+        $minoptions = QUESTION_NUMANS_START,
+        $addoptions = QUESTION_NUMANS_ADD
+    ) {
+        $mform->addElement(
+            'header',
+            'answerhdr',
+            get_string('answers', 'question'),
+            ''
+        );
         $mform->setExpanded('answerhdr', 1);
         $answersoption = '';
-        $repeatedoptions = array();
-        $repeated = $this->get_per_answer_fields_custom($mform, $label, $gradeoptions, 5,
-                $repeatedoptions, $answersoption);
+        $repeatedoptions = [];
+        $repeated = $this->get_per_answer_fields_custom(
+            $mform,
+            $label,
+            $gradeoptions,
+            5,
+            $repeatedoptions,
+            $answersoption
+        );
 
         if (isset($this->question->options)) {
             $repeatsatstart = count($this->question->options->$answersoption);
@@ -223,9 +246,16 @@ class qtype_answersheet_edit_form extends question_edit_form {
             $repeatsatstart = $minoptions;
         }
 
-         $this->repeat_elements($repeated, $repeatsatstart, $repeatedoptions,
-                'noanswers', 'addanswers', $addoptions,
-                $this->get_more_choices_string(), true);
+         $this->repeat_elements(
+             $repeated,
+             $repeatsatstart,
+             $repeatedoptions,
+             'noanswers',
+             'addanswers',
+             $addoptions,
+             $this->get_more_choices_string(),
+             true
+         );
     }
 
     /**
@@ -239,21 +269,37 @@ class qtype_answersheet_edit_form extends question_edit_form {
      * @return array
      * @throws coding_exception
      */
-    protected function get_per_answer_fields($mform, $label, $gradeoptions,
-        &$repeatedoptions, &$answersoption) {
-        $repeated = array();
-        $radioarray = array();
+    protected function get_per_answer_fields(
+        $mform,
+        $label,
+        $gradeoptions,
+        &$repeatedoptions,
+        &$answersoption
+    ) {
+        $repeated = [];
+        $radioarray = [];
         // Answer 'answer' is a key in saving the question (see {@link save_question_answers()}).
         // Same for feedback.
         for ($i = 1; $i <= utils::OPTION_COUNT; $i++) {
             $radioarray[] = $mform->createElement('radio', 'answer', '', get_string('option', 'qtype_answersheet', $i), $i);
         }
         $repeated[] =
-            $mform->createElement('group', 'answergroup', get_string('answer', 'qtype_answersheet'), $radioarray, array(' '),
-                false);
+            $mform->createElement(
+                'group',
+                'answergroup',
+                get_string('answer', 'qtype_answersheet'),
+                $radioarray,
+                [' '],
+                false
+            );
         $repeated[] = $mform->createElement('hidden', 'fraction');
-        $repeated[] = $mform->createElement('text', 'feedback',
-            get_string('feedback', 'question'), array('rows' => 1), $this->editoroptions);
+        $repeated[] = $mform->createElement(
+            'text',
+            'feedback',
+            get_string('feedback', 'question'),
+            ['rows' => 1],
+            $this->editoroptions
+        );
         $repeatedoptions['answer']['type'] = PARAM_RAW;
         $repeatedoptions['feedback']['type'] = PARAM_TEXT;
         $repeatedoptions['fraction']['default'] = 0;
@@ -263,21 +309,27 @@ class qtype_answersheet_edit_form extends question_edit_form {
     }
 
         /**
-     * Get a single row of answers
-     *
-     * @param MoodleQuickForm $mform
-     * @param string $label
-     * @param mixed $gradeoptions
-     * @param mixed $repeatedoptions
-     * @param int $numradios
-     * @param mixed $answersoption
-     * @return array
-     * @throws coding_exception
-     */
-    protected function get_per_answer_fields_custom($mform, $label, $gradeoptions, $numradios,
-        &$repeatedoptions, &$answersoption) {
-        $repeated = array();
-        $radioarray = array();
+         * Get a single row of answers
+         *
+         * @param MoodleQuickForm $mform
+         * @param string $label
+         * @param mixed $gradeoptions
+         * @param mixed $repeatedoptions
+         * @param int $numradios
+         * @param mixed $answersoption
+         * @return array
+         * @throws coding_exception
+         */
+    protected function get_per_answer_fields_custom(
+        $mform,
+        $label,
+        $gradeoptions,
+        $numradios,
+        &$repeatedoptions,
+        &$answersoption
+    ) {
+        $repeated = [];
+        $radioarray = [];
         // Answer 'answer' is a key in saving the question (see {@link save_question_answers()}).
         // Same for feedback.
         for ($i = 1; $i <= $numradios; $i++) {
@@ -286,11 +338,22 @@ class qtype_answersheet_edit_form extends question_edit_form {
             $radioarray[] = $mform->createElement('radio', 'answer', '', get_string('option', 'qtype_answersheet', $letter), $i);
         }
         $repeated[] =
-            $mform->createElement('group', 'answergroup', get_string('answer', 'qtype_answersheet'), $radioarray, array(' '),
-                false);
+            $mform->createElement(
+                'group',
+                'answergroup',
+                get_string('answer', 'qtype_answersheet'),
+                $radioarray,
+                [' '],
+                false
+            );
         $repeated[] = $mform->createElement('hidden', 'fraction');
-        $repeated[] = $mform->createElement('text', 'feedback',
-            get_string('feedback', 'question'), array('rows' => 1), $this->editoroptions);
+        $repeated[] = $mform->createElement(
+            'text',
+            'feedback',
+            get_string('feedback', 'question'),
+            ['rows' => 1],
+            $this->editoroptions
+        );
         $repeatedoptions['answer']['type'] = PARAM_RAW;
         $repeatedoptions['feedback']['type'] = PARAM_TEXT;
         $repeatedoptions['fraction']['default'] = 0;
@@ -305,25 +368,33 @@ class qtype_answersheet_edit_form extends question_edit_form {
     protected function add_documents_fields() {
         $mform = $this->_form;
         foreach (answersheet_docs::DOCUMENT_TYPE_SHORTNAMES as $item) {
-            $mform->addElement('header', $item . 'header',
-                get_string($item . ':title', 'qtype_answersheet'));
+            $mform->addElement(
+                'header',
+                $item . 'header',
+                get_string($item . ':title', 'qtype_answersheet')
+            );
             $repeated = [];
             $repeated[] =
-                $mform->createElement('filemanager',
+                $mform->createElement(
+                    'filemanager',
                     $item,
                     get_string($item, 'qtype_answersheet'),
                     null,
-                    utils::file_manager_options($item));
+                    utils::file_manager_options($item)
+                );
             $repeated[] =
-                $mform->createElement('text',
+                $mform->createElement(
+                    'text',
                     $item . 'name',
-                    get_string($item . 'name', 'qtype_answersheet'));
+                    get_string($item . 'name', 'qtype_answersheet')
+                );
 
             $repeatcount = 1;
             if (!empty($this->question->id)) {
                 $repeatcount = \qtype_answersheet\answersheet_docs::count_records(
-                    array('questionid' => $this->question->id,
-                        'type' => array_flip(answersheet_docs::DOCUMENT_TYPE_SHORTNAMES)[$item]));
+                    ['questionid' => $this->question->id,
+                    'type' => array_flip(answersheet_docs::DOCUMENT_TYPE_SHORTNAMES)[$item]]
+                );
                 $repeatcount = $repeatcount ? $repeatcount : 1;
             }
             $repeatedoptions = [];

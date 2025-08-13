@@ -33,7 +33,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     global $CFG, $DB;
     $dbman = $DB->get_manager();
     if ($oldversion < 2021082401) {
-
         // Define table qtype_answersheet to be renamed to NEWNAMEGOESHERE.
         $table = new xmldb_table('qtype_mcgrid_options');
 
@@ -45,7 +44,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2021082402) {
-
         // Define table qtype_answersheet_docs to be created.
         $table = new xmldb_table('qtype_answersheet_docs');
 
@@ -74,7 +72,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2021082403) {
-
         // Define field startnumbering to be added to qtype_answersheet.
         $table = new xmldb_table('qtype_answersheet');
 
@@ -89,7 +86,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2021082404) {
-
         // Define table qtype_answersheet_parts to be created.
         $table = new xmldb_table('qtype_answersheet_parts');
 
@@ -117,7 +113,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025020300) {
-
         // Define table qtype_answersheet_answers to be created.
         $table = new xmldb_table('qtype_answersheet_answers');
 
@@ -169,7 +164,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025020400) {
-
         // Define field startnumbering to be added to qtype_answersheet.
         $table = new xmldb_table('qtype_answersheet_answers');
 
@@ -184,7 +178,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025020460) {
-
         // Define field startnumbering to be added to qtype_answersheet.
         $table = new xmldb_table('qtype_answersheet_module');
 
@@ -203,7 +196,6 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025020601) {
-
         // Define field startnumbering to be added to qtype_answersheet.
         $table = new xmldb_table('qtype_answersheet_answers');
 
@@ -217,14 +209,12 @@ function xmldb_qtype_answersheet_upgrade($oldversion) {
     }
 
     if ($oldversion < 2025081301) {
-
         // Define key questionid-fk (foreign-unique) to be added to qtype_answersheet_module.
         $table = new xmldb_table('qtype_answersheet_module');
         $key = new xmldb_key('questionidfk', XMLDB_KEY_FOREIGN, ['questionid'], 'question', ['id']);
 
         // Launch add key questionid-fk.
         $dbman->add_key($table, $key);
-
 
         // Define key questionid-fk (foreign-unique) to be added to qtype_answersheet_module.
         $table = new xmldb_table('qtype_answersheet_answers');

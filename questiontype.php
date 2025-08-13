@@ -23,11 +23,10 @@
  */
 
 use qtype_answersheet\answersheet_docs;
-use qtype_answersheet\utils;
+use qtype_answersheet\local\api\answersheet as answersheet_api;
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
-use qtype_answersheet\local\api\answersheet as answersheet_api;
-
+use qtype_answersheet\utils;
 
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
@@ -42,7 +41,6 @@ require_once($CFG->libdir . '/questionlib.php');
  * in various formats.
  */
 class qtype_answersheet extends question_type {
-
     // Override functions as necessary from the parent class located at
     // /question/type/questiontype.php.
     /**
@@ -55,7 +53,12 @@ class qtype_answersheet extends question_type {
         // The feedback are supposed to be editor, but to speed up the page rendering, we will use plain
         // text fields. This means we will need to create mock editor structure.
 
-        $formjsondata = json_decode($question->newquestion, true);
+        // Handle case where newquestion might not be defined (e.g., during testing)
+        $formjsondata = [];
+        if (isset($question->newquestion) && !empty($question->newquestion)) {
+            $formjsondata = json_decode($question->newquestion, true);
+        }
+
         answersheet_api::set_records($question->id, $formjsondata);
         $modules = answersheet_api::get_data($question->id);
         $newanswers = [];
@@ -76,16 +79,33 @@ class qtype_answersheet extends question_type {
                 $newanswers[] = $newquestion;
             }
         }
+
+        // Initialize arrays if they don't exist
+        if (!isset($question->answer)) {
+            $question->answer = [];
+        }
+        if (!isset($question->answersheetanswer)) {
+            $question->answersheetanswer = [];
+        }
+        if (!isset($question->fraction)) {
+            $question->fraction = [];
+        }
+        if (!isset($question->feedback)) {
+            $question->feedback = [];
+        }
+
         foreach ($newanswers as $answer) {
             $question->answer[] = $answer['value'];
             $question->answersheetanswer[] = $answer['id'];
             $question->fraction[] = 0;
             $question->feedback[] = $answer['feedback'];
         }
+
+        $feedbacks = [];
         foreach ($question->feedback as $key => $feedbacktext) {
             $feedbacks[] = [
                 'format' => FORMAT_PLAIN,
-                'text' => $feedbacktext
+                'text' => $feedbacktext,
             ];
         }
         $question->feedback = $feedbacks;
@@ -105,13 +125,171 @@ class qtype_answersheet extends question_type {
     }
 
     /**
+     * Save the answers, with any extra data.
+     *
+     * Questions that use answers will call it from {@link save_question_options()}.
+     *
+     * @param object $question This holds the information from the editing form,
+     *      it is not a standard question object.
+     * @return object $result->error or $result->notice
+     */
+    public function save_question_answers($question) {
+        global $DB;
+
+        $context = $question->context;
+        $oldanswers = $DB->get_records(
+            'question_answers',
+            ['question' => $question->id],
+            'id ASC'
+        );
+
+        // We need separate arrays for answers and extra answer data, so no JOINS there.
+        $extraanswerfields = $this->extra_answer_fields();
+        $isextraanswerfields = is_array($extraanswerfields);
+        $extraanswertable = '';
+        $oldanswerextras = [];
+        if ($isextraanswerfields) {
+            $extraanswertable = array_shift($extraanswerfields);
+            if (!empty($oldanswers)) {
+                $oldanswerextras = $DB->get_records_sql(
+                    "
+                     SELECT * 
+                     FROM {{$extraanswertable}} 
+                     WHERE answerid IN (
+                        SELECT id FROM {{question_answers}} WHERE question = :questionid
+                        )",
+                    ['questionid' => $question->id]
+                );
+            }
+        }
+
+        // Insert all the new answers.
+        foreach ($question->answer as $key => $answerdata) {
+            // Check for, and ignore, completely blank answer from the form.
+            if ($this->is_answer_empty($question, $key)) {
+                continue;
+            }
+
+            // Update an existing answer if possible.
+            $answer = array_shift($oldanswers);
+            if (!$answer) {
+                $answer = new stdClass();
+                $answer->question = $question->id;
+                $answer->answer = '';
+                $answer->feedback = '';
+                $answer->id = $DB->insert_record('question_answers', $answer);
+            }
+
+            $answer = $this->fill_answer_fields($answer, $question, $key, $context);
+            $DB->update_record('question_answers', $answer);
+            if (!isset($question->answersheetanswer[$key])) {
+                continue;
+            }
+            $answersheetanswerid = $question->answersheetanswer[$key];
+            // Create a new answersheet answer if it does not exist.
+            $answersheetanswer = answersheet_answers::get_record(['id' => $answersheetanswerid]);
+            $answersheetanswer->set('answerid', $answer->id);
+            $answersheetanswer->save();
+
+            if ($isextraanswerfields) {
+                // Check, if this answer contains some extra field data.
+                if ($this->is_extra_answer_fields_empty($question, $key)) {
+                    continue;
+                }
+
+                $answerextra = array_shift($oldanswerextras);
+                if (!$answerextra) {
+                    $answerextra = new stdClass();
+                    $answerextra->answerid = $answer->id;
+                    // Avoid looking for correct default for any possible DB field type
+                    // by setting real values.
+                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
+                    $answerextra->id = $DB->insert_record($extraanswertable, $answerextra);
+                } else {
+                    // Update answerid, as record may be reused from another answer.
+                    $answerextra->answerid = $answer->id;
+                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
+                    $DB->update_record($extraanswertable, $answerextra);
+                }
+            }
+        }
+
+        if ($isextraanswerfields) {
+            // Delete any left over extra answer fields records.
+            $oldanswerextraids = [];
+            foreach ($oldanswerextras as $oldextra) {
+                $oldanswerextraids[] = $oldextra->id;
+            }
+            $DB->delete_records_list($extraanswertable, 'id', $oldanswerextraids);
+        }
+
+        // Delete any left over old answer records.
+        $fs = get_file_storage();
+        foreach ($oldanswers as $oldanswer) {
+            $fs->delete_area_files($context->id, 'question', 'answerfeedback', $oldanswer->id);
+            $DB->delete_records('question_answers', ['id' => $oldanswer->id]);
+        }
+    }
+
+    /**
+     * Save documents
+     *
+     * @param object $question
+     * @throws \core\invalid_persistent_exception
+     * @throws coding_exception
+     */
+    protected function save_documents($question) {
+        foreach (answersheet_docs::DOCUMENT_TYPE_SHORTNAMES as $type => $area) {
+            foreach ($question->$area as $index => $filedraftareaid) {
+                $doctext = $question->{$area . 'name'}[$index] ?? "";
+                $docforthisquestion = \qtype_answersheet\answersheet_docs::get_record(
+                    ['questionid' => $question->id, 'type' => $type, 'sortorder' => $index]
+                );
+                $currentdraftcontent = file_get_drafarea_files($question->{$area}[$index]);
+                // Do not add the file if the content is empty.
+                if (!empty($currentdraftcontent->list)) {
+                    if (empty($docforthisquestion)) {
+                        $docforthisquestion = new answersheet_docs(0, (object) [
+                            'type' => $type,
+                            'name' => $doctext,
+                            'sortorder' => $index,
+                            'questionid' => $question->id,
+                        ]);
+                        $docforthisquestion->create();
+                    } else {
+                        $docforthisquestion->set('name', $doctext);
+                        $docforthisquestion->update();
+                    }
+
+                    // Make sure we delete file that is saved under the same index.
+                    $fs = get_file_storage();
+                    $fs->delete_area_files(
+                        $question->context->id,
+                        'qtype_answersheet',
+                        $area,
+                        $docforthisquestion->get('id')
+                    );
+                    file_save_draft_area_files(
+                        $filedraftareaid,
+                        $question->context->id,
+                        'qtype_answersheet',
+                        $area,
+                        $docforthisquestion->get('id'),
+                        utils::file_manager_options($area)
+                    );
+                }
+            }
+        }
+    }
+
+    /**
      * Defines the table which extends the question table. This allows the base questiontype
      * to automatically save, backup and restore the extra fields.
      *
-     * @return an array with the table name (first) and then the column names (apart from id and questionid)
+     * @return @array an array with the table name (first) and then the column names (apart from id and questionid)
      */
-    public function extra_question_fields() {
-        return array('qtype_answersheet',
+    public function extra_question_fields(): array {
+        return ['qtype_answersheet',
             'correctfeedback',
             'correctfeedbackformat',
             'partiallycorrectfeedback',
@@ -119,8 +297,8 @@ class qtype_answersheet extends question_type {
             'incorrectfeedback',
             'incorrectfeedbackformat',
             'shownumcorrect',
-            'startnumbering'
-        );
+            'startnumbering',
+        ];
     }
 
     /**
@@ -138,8 +316,12 @@ class qtype_answersheet extends question_type {
         $this->move_files_in_hints($questionid, $oldcontextid, $newcontextid);
 
         foreach (utils::get_fileareas() as $area) {
-            $fs->move_area_files_to_new_context($oldcontextid,
-                $newcontextid, 'qtype_answersheet', $area);
+            $fs->move_area_files_to_new_context(
+                $oldcontextid,
+                $newcontextid,
+                'qtype_answersheet',
+                $area
+            );
         }
     }
 
@@ -173,158 +355,6 @@ class qtype_answersheet extends question_type {
 
         foreach (utils::get_fileareas() as $area) {
             $fs->delete_area_files($contextid, 'qtype_answersheet', $area);
-        }
-    }
-
-    /**
-     * Save documents
-     *
-     * @param object $question
-     * @throws \core\invalid_persistent_exception
-     * @throws coding_exception
-     */
-    protected function save_documents($question) {
-        foreach (answersheet_docs::DOCUMENT_TYPE_SHORTNAMES as $type => $area) {
-            foreach ($question->$area as $index => $filedraftareaid) {
-                $doctext = $question->{$area . 'name'}[$index] ?? "";
-                $docforthisquestion = \qtype_answersheet\answersheet_docs::get_record(
-                    array('questionid' => $question->id, 'type' => $type, 'sortorder' => $index)
-                );
-                $currentdraftcontent = file_get_drafarea_files($question->{$area}[$index]);
-                // Do not add the file if the content is empty.
-                if (!empty($currentdraftcontent->list)) {
-                    if (empty($docforthisquestion)) {
-                        $docforthisquestion = new answersheet_docs(0, (object) [
-                            'type' => $type,
-                            'name' => $doctext,
-                            'sortorder' => $index,
-                            'questionid' => $question->id
-                        ]);
-                        $docforthisquestion->create();
-                    } else {
-                        $docforthisquestion->set('name', $doctext);
-                        $docforthisquestion->update();
-                    }
-
-                    // Make sure we delete file that is saved under the same index.
-                    $fs = get_file_storage();
-                    $fs->delete_area_files($question->context->id,
-                        'qtype_answersheet', $area, $docforthisquestion->get('id'));
-                    file_save_draft_area_files($filedraftareaid, $question->context->id,
-                        'qtype_answersheet', $area, $docforthisquestion->get('id'),
-                        utils::file_manager_options($area));
-                }
-            }
-        }
-    }
-
-    /**
-     * Save the answers, with any extra data.
-     *
-     * Questions that use answers will call it from {@link save_question_options()}.
-     * @param object $question  This holds the information from the editing form,
-     *      it is not a standard question object.
-     * @return object $result->error or $result->notice
-     */
-    public function save_question_answers($question) {
-        global $DB;
-
-        $context = $question->context;
-        $oldanswers = $DB->get_records('question_answers',
-                array('question' => $question->id), 'id ASC');
-
-        // We need separate arrays for answers and extra answer data, so no JOINS there.
-        $extraanswerfields = $this->extra_answer_fields();
-        $isextraanswerfields = is_array($extraanswerfields);
-        $extraanswertable = '';
-        $oldanswerextras = array();
-        if ($isextraanswerfields) {
-            $extraanswertable = array_shift($extraanswerfields);
-            if (!empty($oldanswers)) {
-                $oldanswerextras = $DB->get_records_sql("SELECT * FROM {{$extraanswertable}} WHERE " .
-                    'answerid IN (SELECT id FROM {question_answers} WHERE question = ' . $question->id . ')' );
-            }
-        }
-
-        // Insert all the new answers.
-        foreach ($question->answer as $key => $answerdata) {
-            // Check for, and ignore, completely blank answer from the form.
-            if ($this->is_answer_empty($question, $key)) {
-                continue;
-            }
-
-            // Update an existing answer if possible.
-            $answer = array_shift($oldanswers);
-            if (!$answer) {
-                $answer = new stdClass();
-                $answer->question = $question->id;
-                $answer->answer = '';
-                $answer->feedback = '';
-                $answer->id = $DB->insert_record('question_answers', $answer);
-            }
-
-            $answer = $this->fill_answer_fields($answer, $question, $key, $context);
-            $DB->update_record('question_answers', $answer);
-            $answersheetanswerid = $question->answersheetanswer[$key];
-            // Create a new answersheet answer if it does not exist.
-            $answersheetanswer = answersheet_answers::get_record(['id' => $answersheetanswerid]);
-            $answersheetanswer->set('answerid', $answer->id);
-            $answersheetanswer->save();
-            // $clone = false;
-            // $moduleid = $answersheetanswer->get('moduleid');
-            // if ($answersheetanswer->get('answerid') > 0) {
-            //     $answersheetanswer = $answersheetanswer->clone();
-            //     $clone = true;
-            // }
-            // $answersheetanswer->set('answerid', $answer->id);
-            // $answersheetanswer->set('questionid', $question->id);
-
-            // $module = answersheet_module::get_record(['id' => $moduleid]);
-            // if ($clone) {
-            //     $module = $module->clone();
-            // }
-            // $module->set('questionid', $question->id);
-            // $module->save();
-            // $answersheetanswer->set('moduleid', $module->get('id'));
-            // $answersheetanswer->save();
-
-            if ($isextraanswerfields) {
-                // Check, if this answer contains some extra field data.
-                if ($this->is_extra_answer_fields_empty($question, $key)) {
-                    continue;
-                }
-
-                $answerextra = array_shift($oldanswerextras);
-                if (!$answerextra) {
-                    $answerextra = new stdClass();
-                    $answerextra->answerid = $answer->id;
-                    // Avoid looking for correct default for any possible DB field type
-                    // by setting real values.
-                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
-                    $answerextra->id = $DB->insert_record($extraanswertable, $answerextra);
-                } else {
-                    // Update answerid, as record may be reused from another answer.
-                    $answerextra->answerid = $answer->id;
-                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
-                    $DB->update_record($extraanswertable, $answerextra);
-                }
-            }
-        }
-
-        if ($isextraanswerfields) {
-            // Delete any left over extra answer fields records.
-            $oldanswerextraids = array();
-            foreach ($oldanswerextras as $oldextra) {
-                $oldanswerextraids[] = $oldextra->id;
-            }
-            $DB->delete_records_list($extraanswertable, 'id', $oldanswerextraids);
-        }
-
-        // Delete any left over old answer records.
-        $fs = get_file_storage();
-        foreach ($oldanswers as $oldanswer) {
-            $fs->delete_area_files($context->id, 'question', 'answerfeedback', $oldanswer->id);
-            $DB->delete_records('question_answers', array('id' => $oldanswer->id));
         }
     }
 }

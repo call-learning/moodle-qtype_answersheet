@@ -35,7 +35,6 @@ use qtype_answersheet\local\api\answersheet;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_data extends external_api {
-
     /**
      * Returns description of method parameters
      *
@@ -55,7 +54,8 @@ class get_data extends external_api {
      * @throws \invalid_parameter_exception
      */
     public static function execute(int $questionid): array {
-        $params = self::validate_parameters(self::execute_parameters(),
+        $params = self::validate_parameters(
+            self::execute_parameters(),
             [
                 'questionid' => $questionid,
             ]
@@ -120,7 +120,9 @@ class get_data extends external_api {
                                 new external_single_structure([
                                     'name' => new external_value(PARAM_TEXT, 'Name', VALUE_REQUIRED),
                                     'selected' => new external_value(PARAM_BOOL, 'Selected', VALUE_REQUIRED),
-                                ]), 'Option', VALUE_OPTIONAL
+                                ]),
+                                'Option',
+                                VALUE_OPTIONAL
                             ),
                         ])
                     ),
@@ -129,4 +131,3 @@ class get_data extends external_api {
         ]);
     }
 }
-

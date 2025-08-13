@@ -18,7 +18,6 @@ namespace qtype_answersheet\local\api;
 
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
-use xmldb_structure;
 /**
  * Class programme
  *
@@ -27,7 +26,6 @@ use xmldb_structure;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class answersheet {
-
     /**
      * Get the table structure for the custom field
      * @return array $table
@@ -207,7 +205,7 @@ class answersheet {
                     [
                         'id' => 1,
                         'sortorder' => 0,
-                        'cells' => array_map(function($column) {
+                        'cells' => array_map(function ($column) {
                             return [
                                 'column' => $column['column'],
                                 'value' => '',
@@ -248,7 +246,6 @@ class answersheet {
                 self::update_record($record, $row);
             }
         }
-
     }
 
     /**
@@ -258,7 +255,7 @@ class answersheet {
      */
     private static function update_record(answersheet_answers $record, array $row): void {
         $columns = self::get_column_structure();
-        $fields = array_map(function($column) {
+        $fields = array_map(function ($column) {
             return $column['column'];
         }, $columns);
         foreach ($fields as $field) {

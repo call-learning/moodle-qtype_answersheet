@@ -14,6 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+// For a complete list of base question classes please examine the file
+// /question/type/questionbase.php.
+//
+// Make sure to implement all the abstract methods of the base class.
+
 /**
  * Question definition class for answersheet.
  *
@@ -21,21 +26,7 @@
  * @copyright   2021 Laurent David <laurent@call-learning.fr>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
- use qtype_answersheet\local\persistent\answersheet_answers;
-
-defined('MOODLE_INTERNAL') || die();
-
-// For a complete list of base question classes please examine the file
-// /question/type/questionbase.php.
-//
-// Make sure to implement all the abstract methods of the base class.
-
-/**
- * Class that represents a answersheet question.
- */
 class qtype_answersheet_question extends question_graded_automatically {
-
     /**
      * @var array $answers
      */
@@ -45,6 +36,47 @@ class qtype_answersheet_question extends question_graded_automatically {
      * @var array $aanwers
      */
     public $penalty = 0.1;
+
+    /**
+     * @var string $correctfeedback
+     */
+    public string $correctfeedback = '';
+
+    /**
+     * @var string $partiallycorrectfeedback
+     */
+    public string $correctfeedbackformat = FORMAT_HTML;
+
+    /**
+     * @var string $partiallycorrectfeedback
+     */
+    public string $partiallycorrectfeedback = '';
+    /**
+     * @var string $partiallycorrectfeedbackformat
+     */
+    public string $partiallycorrectfeedbackformat = FORMAT_HTML;
+
+    /**
+     * @var string $incorrectfeedback
+     */
+    public string $incorrectfeedback = '';
+    /**
+     * @var string $incorrectfeedbackformat
+     */
+    public string $incorrectfeedbackformat = FORMAT_HTML;
+
+    /**
+     * @var int $startnumbering
+     */
+    public int $startnumbering = 1;
+    /**
+     * @var array $audioname
+     */
+    public array $audioname = [];
+    /**
+     * @var array $documentname
+     */
+    public array $documentname = [];
 
     /**
      * Returns data to be included in the form submission.
@@ -65,7 +97,7 @@ class qtype_answersheet_question extends question_graded_automatically {
      * @return array|null Null if it is not possible to compute a correct response.
      */
     public function get_correct_response() {
-        $response = array();
+        $response = [];
         foreach ($this->answers as $key => $answer) {
             // Remove any leading or trailing whitespace and convert to lower case.
             $response[$this->field($key)] = trim(strtolower($answer->answer));
@@ -98,7 +130,8 @@ class qtype_answersheet_question extends question_graded_automatically {
         $isdocument = $component == 'qtype_answersheet' && $filearea == 'document';
         $isaudio = $component == 'qtype_answersheet' && $filearea == 'audio';
         $isadocumentfromthisquestion = \qtype_answersheet\answersheet_docs::record_exists_select(
-            'questionid = :questionid AND id = :id', array('questionid' => $this->id, 'id' => $args[0])
+            'questionid = :questionid AND id = :id',
+            ['questionid' => $this->id, 'id' => $args[0]]
         );
         return parent::check_file_access($qa, $options, $component, $filearea, $args, $forcedownload)
             || ($isdocument || $isaudio) && $isadocumentfromthisquestion;
@@ -159,7 +192,6 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function summarise_response(array $response) {
         $textresponses = [];
         $index = 1;
-        $answers = answersheet_answers::get_all_records_for_question($this->id);
         foreach ($this->answers as $answerkey => $answerinfo) {
             $currentresponse = $this->get_response_value($answerkey, $response);
             if (is_null($currentresponse)) {
@@ -217,7 +249,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             $totalscore += $isrightvalue;
         }
         $fraction = $totalscore / count($this->answers);
-        return array($fraction, question_state::graded_state_for_fraction($fraction));
+        return [$fraction, question_state::graded_state_for_fraction($fraction)];
     }
 
     /**
@@ -257,7 +289,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             }
             $rightcount += $this->compare_response_with_answer($currentresponse, $answerinfo);
         }
-        return array($rightcount, count($this->answers));
+        return [$rightcount, count($this->answers)];
     }
 
     /**
@@ -287,7 +319,6 @@ class qtype_answersheet_question extends question_graded_automatically {
             }
         }
         return $totalscore / count($this->answers);
-
     }
 
     /**

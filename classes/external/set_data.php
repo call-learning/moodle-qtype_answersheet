@@ -82,7 +82,8 @@ class set_data extends external_api {
         }
         $context = context_system::instance();
         require_capability('qtype/answersheet:edit', $context);
-        $params = self::validate_parameters(self::execute_parameters(),
+        $params = self::validate_parameters(
+            self::execute_parameters(),
             [
                 'questionid' => $questionid,
                 'modules' => $modules,

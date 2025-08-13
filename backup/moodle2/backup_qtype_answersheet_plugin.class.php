@@ -62,7 +62,7 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
                 'numoptions',
                 'usermodified',
                 'timecreated',
-                'timemodified'
+                'timemodified',
             ]
         );
         $pluginwrapper->add_child($modules);
@@ -89,7 +89,7 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
                 'feedback',
                 'usermodified',
                 'timecreated',
-                'timemodified'
+                'timemodified',
             ]
         );
         $pluginwrapper->add_child($answers);

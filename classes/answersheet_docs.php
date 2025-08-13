@@ -44,7 +44,7 @@ class answersheet_docs extends persistent {
      */
     const DOCUMENT_TYPE_SHORTNAMES = [
         self::AUDIO_FILE_TYPE => 'audio',
-        self::DOCUMENT_FILE_TYPE => 'document'
+        self::DOCUMENT_FILE_TYPE => 'document',
     ];
 
     /**
@@ -55,7 +55,7 @@ class answersheet_docs extends persistent {
      */
     public static function add_data($question) {
         $docsforthisquestion = static::get_records(
-            array('questionid' => $question->id)
+            ['questionid' => $question->id]
         );
         foreach ($docsforthisquestion as $doc) {
             $type = $doc->get('type');
@@ -74,12 +74,12 @@ class answersheet_docs extends persistent {
      * @return array[]
      */
     protected static function define_properties() {
-        return array(
+        return [
             'type' => [
                 'default' => self::AUDIO_FILE_TYPE,
                 'null' => NULL_NOT_ALLOWED,
                 'type' => PARAM_INT,
-                'choices' => [self::AUDIO_FILE_TYPE, self::DOCUMENT_FILE_TYPE]
+                'choices' => [self::AUDIO_FILE_TYPE, self::DOCUMENT_FILE_TYPE],
             ],
             'name' => [
                 'type' => PARAM_TEXT,
@@ -91,8 +91,7 @@ class answersheet_docs extends persistent {
             'questionid' => [
                 'null' => NULL_NOT_ALLOWED,
                 'type' => PARAM_INT,
-            ]
-        );
+            ],
+        ];
     }
-
 }

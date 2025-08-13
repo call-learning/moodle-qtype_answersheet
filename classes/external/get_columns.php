@@ -55,7 +55,8 @@ class get_columns extends external_api {
      */
     public static function execute(string $table): array {
         global $CFG;
-        $params = self::validate_parameters(self::execute_parameters(),
+        $params = self::validate_parameters(
+            self::execute_parameters(),
             [
                 'table' => $table,
             ]
@@ -97,10 +98,11 @@ class get_columns extends external_api {
                         new external_single_structure([
                             'name' => new external_value(PARAM_TEXT, 'Name', VALUE_REQUIRED),
                             'selected' => new external_value(PARAM_BOOL, 'Selected', VALUE_REQUIRED),
-                        ]), 'Option', VALUE_OPTIONAL
+                        ]),
+                        'Option',
+                        VALUE_OPTIONAL
                     ),
                 ])
-            )]
-        );
+            )]);
     }
 }

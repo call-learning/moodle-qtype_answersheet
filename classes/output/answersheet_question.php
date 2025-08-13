@@ -50,7 +50,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class answersheet_question implements renderable, templatable {
-
     /**
      * @var question_attempt $qa
      */
@@ -120,7 +119,7 @@ class answersheet_question implements renderable, templatable {
             $newmodule[$type] = true;
             if ($module['type'] == answersheet_module::RADIO_CHECKED) {
                 // The possible answers are and array of A B C D etc values, length is defined by numoptions.
-                $newmodule['possibleanswers'] = array_map(function($index) {
+                $newmodule['possibleanswers'] = array_map(function ($index) {
                     return chr(65 + $index);
                 }, range(0, $module['numoptions'] - 1));
             }
@@ -135,7 +134,7 @@ class answersheet_question implements renderable, templatable {
                 }
                 if ($module['type'] == answersheet_module::RADIO_CHECKED) {
                     $newquestion['correctanswer'] = ord($newquestion['options']) - 64;
-                    $newquestion['answers'] = array_map(function($index) use ($newquestion) {
+                    $newquestion['answers'] = array_map(function ($index) use ($newquestion) {
                         $answer = [
                             'label' => chr(65 + $index),
                             'value' => $index + 1,
@@ -169,7 +168,7 @@ class answersheet_question implements renderable, templatable {
                 }
                 if ($module['type'] == answersheet_module::LETTER_BY_LETTER) {
                     $newquestion['correctanswer'] = $newquestion['answer'];
-                    $newquestion['answers'] = array_map(function($index) use ($newquestion) {
+                    $newquestion['answers'] = array_map(function ($index) use ($newquestion) {
                         if ($index >= strlen($newquestion['correctanswer'])) {
                             return [
                                 'label' => '',
@@ -224,8 +223,13 @@ class answersheet_question implements renderable, templatable {
         $slot = $this->qa->get_slot();
         $fs = get_file_storage();
         $componentname = $question->qtype->plugin_name();
-        $files = $fs->get_area_files($question->contextid, $componentname,
-            $filearea, $itemid, 'id');
+        $files = $fs->get_area_files(
+            $question->contextid,
+            $componentname,
+            $filearea,
+            $itemid,
+            'id'
+        );
         if ($files) {
             foreach ($files as $file) {
                 if ($file->is_directory()) {
@@ -237,7 +241,8 @@ class answersheet_question implements renderable, templatable {
                     $file->get_filearea(),
                     "$qubaid/$slot/{$file->get_itemid()}",
                     $file->get_filepath(),
-                    $file->get_filename());
+                    $file->get_filename()
+                );
                 return $url->out();
             }
         }
@@ -256,27 +261,31 @@ class answersheet_question implements renderable, templatable {
         $question = $this->qa->get_question();
 
         $docs =
-            answersheet_docs::get_records(array('questionid' => $question->id,
-                'type' => array_flip(answersheet_docs::DOCUMENT_TYPE_SHORTNAMES)[$documenttype]),
-                'sortorder');
+            answersheet_docs::get_records(
+                ['questionid' => $question->id,
+                'type' => array_flip(answersheet_docs::DOCUMENT_TYPE_SHORTNAMES)[$documenttype]],
+                'sortorder'
+            );
 
         foreach (array_values($docs) as $index => $doc) {
             $docid = $doc->get('id');
             $qcid = $question->contextid;
             $qubaid = $this->qa->get_usage_id();
             $slot = $this->qa->get_slot();
-            $viewurl = new moodle_url('/question/type/answersheet/viewdoc.php',
+            $viewurl = new moodle_url(
+                '/question/type/answersheet/viewdoc.php',
                 [
                     'docid' => $docid,
                     'cmid' => $this->options->context->instanceid,
                     'qcid' => $qcid,
                     'qubaid' => $qubaid,
                     'slot' => $slot,
-                ]);
+                ]
+            );
             $doccontext[] = [
                 'url' => $this->get_url_for_document($documenttype, $doc->get('id')),
                 'viewurl' => $viewurl->out(),
-                'name' => $doc->get('name')
+                'name' => $doc->get('name'),
             ];
         }
         return $doccontext;

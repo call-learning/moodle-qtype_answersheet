@@ -39,11 +39,11 @@ class utils {
      * Option for filemanager
      */
     const FILEMANAGER_OPTIONS = [
-        'audio' => array('accepted_types' => 'web_audio', 'maxbytes' => 0, 'maxfiles' => 1, 'subdirs' => 0),
-        'document' => array('accepted_types' => 'pdf', 'maxbytes' => 0, 'maxfiles' => 1, 'subdirs' => 0),
-        'correctfeedback' => array('trusttext' => true, 'subdirs' => true),
-        'partiallycorrectfeedback' => array('trusttext' => true, 'subdirs' => true),
-        'incorrectfeedback' => array('trusttext' => true, 'subdirs' => true)
+        'audio' => ['accepted_types' => 'web_audio', 'maxbytes' => 0, 'maxfiles' => 1, 'subdirs' => 0],
+        'document' => ['accepted_types' => 'pdf', 'maxbytes' => 0, 'maxfiles' => 1, 'subdirs' => 0],
+        'correctfeedback' => ['trusttext' => true, 'subdirs' => true],
+        'partiallycorrectfeedback' => ['trusttext' => true, 'subdirs' => true],
+        'incorrectfeedback' => ['trusttext' => true, 'subdirs' => true],
     ];
 
     /**
@@ -55,7 +55,7 @@ class utils {
         return [
                 'correctfeedback',
                 'partiallycorrectfeedback',
-                'incorrectfeedback'
+                'incorrectfeedback',
             ];
     }
     /**

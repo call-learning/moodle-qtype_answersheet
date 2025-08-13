@@ -103,8 +103,11 @@ class renderer extends qtype_with_combined_feedback_renderer {
             $textresponses[] = "{$questionname} -> $answertypetext";
             $index++;
         }
-        return get_string('correctansweris', 'qtype_shortanswer',
-            s(join(', ', $textresponses)));
+        return get_string(
+            'correctansweris',
+            'qtype_shortanswer',
+            s(join(', ', $textresponses))
+        );
     }
 
     /**
