@@ -50,7 +50,6 @@ require_once($CFG->libdir . '/questionlib.php');
  * in various formats.
  */
 class qtype_answersheet extends question_type {
-
     #[\Override]
     public function save_question_options($question) {
         // Ensure arrays are initialized.
@@ -95,7 +94,7 @@ class qtype_answersheet extends question_type {
                     $mod = new answersheet_module();
                 } else {
                     $mod = answersheet_module::get_record([
-                        'id' => $module['id']
+                        'id' => $module['id'],
                     ]);
                 }
                 $mod->set('name', $module['name']);
@@ -138,7 +137,7 @@ class qtype_answersheet extends question_type {
                         'feedback' => $answerinfo['feedback'] ?? '',
                         'usermodified' => $row['usermodified'] ?? 0,
                         'timecreated' => $row['timecreated'] ?? 0,
-                        'timemodified' => $row['timemodified'] ?? 0
+                        'timemodified' => $row['timemodified'] ?? 0,
                     ];
                     if (!empty($row['id']) && is_numeric($row['id'])) {
                         $question->extraanswerfields['id'] = $row['id'];

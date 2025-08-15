@@ -74,7 +74,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             $type = $answersheet->get_module_type();
             $answervalue = $answersheet->get('answer');
             $response[$this->field($key)] = trim($answervalue);
-            switch($type) {
+            switch ($type) {
                 case \qtype_answersheet\local\persistent\answersheet_module::RADIO_CHECKED:
                     // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
                     $options = $answersheet->get('options');
@@ -319,7 +319,7 @@ class qtype_answersheet_question extends question_graded_automatically {
      * @return int 1 if correct, 0 if not
      */
     public function compare_response_with_answer($currentresponse, $answerinfo) {
-        if ($this->compare_keys($currentresponse,$answerinfo->answer)) {
+        if ($this->compare_keys($currentresponse, $answerinfo->answer)) {
             return 1;
         } else {
             return 0;
@@ -350,7 +350,7 @@ class qtype_answersheet_question extends question_graded_automatically {
      */
     private function normalise_answer(mixed $input): mixed {
         if (is_numeric($input)) {
-            return intval($input) ;
+            return intval($input);
         }
         return trim($input);
     }

@@ -109,7 +109,6 @@ final class backup_test extends \advanced_testcase {
 
         // Attempt the question in the quiz.
 
-
         $this->setAdminUser();
         // Perform backup.
         $bc = new backup_controller(
@@ -150,7 +149,6 @@ final class backup_test extends \advanced_testcase {
         $rc->execute_precheck();
         $rc->execute_plan();
         $rc->destroy();
-
 
         // Verify restored data.
         $this->assertEquals($originalquizcount + 1, $DB->count_records('quiz'));

@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -14,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 namespace qtype_answersheet;
 
 use advanced_testcase;
@@ -33,7 +33,7 @@ use test_question_maker;
  * @copyright   2025 Laurent David <laurent@call-learning.fr>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_answersheet_question_test extends advanced_testcase {
+final class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * @var qtype_answersheet_test_helper
      */
@@ -46,20 +46,22 @@ class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * Test get summary
      */
-    public function test_get_question_summary() {
+    public function test_get_question_summary(): void {
         $this->assertEquals($this->testhelper::QUESTION_TEXT, $this->dd->get_question_summary());
     }
 
     /**
      * Test summarize response
      */
-    public function test_summarise_response() {
+    public function test_summarise_response(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
 
         $response = $this->get_right_responses();
 
-        $this->assertEquals('1 -> 1, 2 -> 2, 3 -> Answer 1, 4 -> Answer 2, 5 -> Text 1, 6 -> Text 2',
-            $this->dd->summarise_response($response));
+        $this->assertEquals(
+            '1 -> 1, 2 -> 2, 3 -> Answer 1, 4 -> Answer 2, 5 -> Text 1, 6 -> Text 2',
+            $this->dd->summarise_response($response)
+        );
     }
 
     /**
@@ -81,19 +83,21 @@ class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * Test clear wrong from response
      */
-    public function test_clear_wrong_from_response() {
+    public function test_clear_wrong_from_response(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
         $response = $this->get_right_responses();
         $response['answer2'] = 1; // Wrong answer.
         // The first 1 is wrong..
-        $this->assertCount(5,
-            $this->dd->clear_wrong_from_response($response));
+        $this->assertCount(
+            5,
+            $this->dd->clear_wrong_from_response($response)
+        );
     }
 
     /**
      * Test num parts right
      */
-    public function test_get_num_parts_right() {
+    public function test_get_num_parts_right(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
         $response = $this->get_right_responses();
         $response['answer3'] = 'answer 4'; // Wrong answer.
@@ -107,7 +111,7 @@ class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * Test expected data
      */
-    public function test_get_expected_data() {
+    public function test_get_expected_data(): void {
         $this->resetAfterTest();
 
         $question = $this->create_real_question();
@@ -149,7 +153,7 @@ class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * Test correct response
      */
-    public function test_get_correct_response() {
+    public function test_get_correct_response(): void {
         $question = $this->create_real_question();
         $question->start_attempt(new question_attempt_step(), 1);
         $response = $this->get_right_responses();
@@ -164,7 +168,7 @@ class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * Test is same response
      */
-    public function test_is_same_response() {
+    public function test_is_same_response(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
 
         $response = $this->get_right_responses();
@@ -175,8 +179,9 @@ class qtype_answersheet_question_test extends advanced_testcase {
         // Is an empty response same ''.
         $this->assertTrue(
             $this->dd->is_same_response(
-                array(),
-                $emptyresponse)
+                [],
+                $emptyresponse
+            )
         );
 
         $emptybutone = $response;
@@ -184,27 +189,32 @@ class qtype_answersheet_question_test extends advanced_testcase {
 
         $this->assertFalse(
             $this->dd->is_same_response(
-                array(),
-                $emptybutone));
+                [],
+                $emptybutone
+            )
+        );
 
         $this->assertTrue(
             $this->dd->is_same_response(
                 $response,
-                $response));
+                $response
+            )
+        );
 
         $differentresponse = $response;
         $differentresponse[array_keys($response)[1]] = 'Wrong answer 5';
         $this->assertFalse(
             $this->dd->is_same_response(
                 $response,
-                $differentresponse)
+                $differentresponse
+            )
         );
     }
 
     /**
      * Test is complete response
      */
-    public function test_is_complete_response() {
+    public function test_is_complete_response(): void {
         $dd = test_question_maker::make_question('answersheet');
         $dd->start_attempt(new question_attempt_step(), 1);
         $response = $this->get_right_responses();
@@ -219,7 +229,7 @@ class qtype_answersheet_question_test extends advanced_testcase {
     /**
      * Test is gradable response
      */
-    public function test_is_gradable_response() {
+    public function test_is_gradable_response(): void {
         $dd = test_question_maker::make_question('answersheet');
         $dd->start_attempt(new question_attempt_step(), 1);
 
@@ -230,18 +240,18 @@ class qtype_answersheet_question_test extends advanced_testcase {
             ''
         );
         $this->assertTrue($dd->is_gradable_response($fullresponse));
-        $this->assertFalse($dd->is_gradable_response(array()));
+        $this->assertFalse($dd->is_gradable_response([]));
         $this->assertFalse($dd->is_gradable_response($emptyresponse));
         $this->assertTrue($dd->is_gradable_response($firstoneempty));
-        $oneresponse = array_splice($fullresponse, 0, 1);;
+        $oneresponse = array_splice($fullresponse, 0, 1);
+        ;
         $this->assertTrue($dd->is_gradable_response($oneresponse));
-
     }
 
     /**
      * Test grading
      */
-    public function test_grading() {
+    public function test_grading(): void {
         $dd = test_question_maker::make_question('answersheet');
         $dd->start_attempt(new question_attempt_step(), 1);
         $fullresponse = $this->get_right_responses();

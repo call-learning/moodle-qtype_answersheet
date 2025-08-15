@@ -151,10 +151,10 @@ class qtype_answersheet_edit_form extends question_edit_form {
     protected function data_preprocessing_extra_answer_fields($question, $extraanswerfields) {
         // Because we have additional extran answer fields that looks like the main fields,
         // we need a way write them somewhere else
-        $extrafieldsdata = array();
+        $extrafieldsdata = [];
         // First, prepare an array if empty arrays for each extra answer fields data.
         foreach ($extraanswerfields as $field) {
-            $extrafieldsdata[$field] = array();
+            $extrafieldsdata[$field] = [];
         }
 
         // Fill arrays with data from $question->options->answers.

@@ -28,26 +28,28 @@ use test_question_maker;
  * @copyright   2025 Laurent David <laurent@call-learning.fr>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_answersheet_edit_form_test extends \advanced_testcase {
+final class qtype_answersheet_edit_form_test extends \advanced_testcase {
     /**
      * Test the form correctly validates the HTML allowed in items.
      */
-    public function test_item_validation() {
-        list($form, $category) = $this->get_form();
+    public function test_item_validation(): void {
+        [$form, $category] = $this->get_form();
 
         $generator = $this->getDataGenerator();
         $submitteddata = test_question_maker::get_question_form_data('answersheet');
         $overrides = [
             'category' => $category->id,
-            'defaultmark' => -1 // Will raise an error.
+            'defaultmark' => -1, // Will raise an error.
         ];
 
         $fromform = $generator->combine_defaults_and_record((array) $submitteddata, $overrides);
         $errors = $form->validation($fromform, []);
 
         // For now we don't do much validation but this will need to be covered in detail if it does.
-        $this->assertEquals(get_string('defaultmarkmustbepositive', 'question'),
-            $errors['defaultmark']);
+        $this->assertEquals(
+            get_string('defaultmarkmustbepositive', 'question'),
+            $errors['defaultmark']
+        );
     }
 
     /**
@@ -66,7 +68,7 @@ class qtype_answersheet_edit_form_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         $syscontext = context_system::instance();
-        $category = question_make_default_categories(array($syscontext));
+        $category = question_make_default_categories([$syscontext]);
         $fakequestion = new stdClass();
         $fakequestion->qtype = 'answersheet';
         $fakequestion->contextid = $syscontext->id;
@@ -74,14 +76,18 @@ class qtype_answersheet_edit_form_test extends \advanced_testcase {
         $fakequestion->category = $category->id;
         $fakequestion->questiontext = 'Test question';
         $fakequestion->options = new stdClass();
-        $fakequestion->options->answers = array();
+        $fakequestion->options->answers = [];
         $fakequestion->formoptions = new stdClass();
         $fakequestion->formoptions->movecontext = null;
         $fakequestion->formoptions->repeatelements = true;
         $fakequestion->inputs = null;
 
-        $form = new \qtype_answersheet_edit_form(new moodle_url('/'), $fakequestion, $category,
-            new question_edit_contexts($syscontext));
+        $form = new \qtype_answersheet_edit_form(
+            new moodle_url('/'),
+            $fakequestion,
+            $category,
+            new question_edit_contexts($syscontext)
+        );
 
         return [$form, $category];
     }

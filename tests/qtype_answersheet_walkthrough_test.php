@@ -27,8 +27,7 @@ require_once($CFG->dirroot . '/question/type/answersheet/tests/helper.php');
  * @copyright   2021 Laurent David <laurent@call-learning.fr>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_base {
-
+final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_base {
     protected qtype_answersheet_test_helper $testhelper;
     /**
      * @var question_definition
@@ -49,16 +48,16 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
         $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
         $cat = $questiongenerator->create_question_category(['contextid' => $quizcontext->id]);
         $question = $questiongenerator->create_question('answersheet', 'standard', ['category' => $cat->id]);
-        $this->question =  @question_bank::load_question($question->id);
+        $this->question = @question_bank::load_question($question->id);
     }
     /**
      * Test the question type name.
      */
-    public function test_interactive_behaviour() {
-        $this->question->hints = array(
+    public function test_interactive_behaviour(): void {
+        $this->question->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
         $this->start_attempt_at_question($this->question, 'interactive', 10);
 
         // Check the initial state.
@@ -74,7 +73,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Save the wrong answer.
         $fullwrong = qtype_answersheet_test_helper::create_full_wrong_response($this->question);
@@ -93,7 +93,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
         // Submit the wrong answer.
         $this->process_submission(
             array_merge($fullwrong, ['-submit' => 1])
@@ -111,10 +112,11 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_try_again_button_expectation(true),
             $this->get_does_not_contain_correctness_expectation(),
-            $this->get_contains_hint_expectation('This is the first hint'));
+            $this->get_contains_hint_expectation('This is the first hint')
+        );
 
         // Do try again.
-        $this->process_submission(array('-tryagain' => 1));
+        $this->process_submission(['-tryagain' => 1]);
 
         // Verify.
         $this->check_current_state(question_state::$todo);
@@ -130,12 +132,14 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(2),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Submit the right answer.
         $fullright = qtype_answersheet_test_helper::create_full_right_response($this->question);
         $this->process_submission(
-            array_merge($fullright, ['-submit' => 1]));
+            array_merge($fullright, ['-submit' => 1])
+        );
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
@@ -148,7 +152,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation_currentanswer($this->question, 1, 1, $fullright),
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_correct_expectation(),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Check regrading does not mess anything up.
         $this->quba->regrade_all_questions();
@@ -170,11 +175,14 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
      */
     public function get_contains_answer_expectation($dd, $answerindex, $value, $enabled = true, $checked = false) {
         return $this->get_contains_radio_expectation(
-            array(
+            [
                 'name' => $this->quba->get_field_prefix($this->slot)
                     . $dd->answers[$answerindex]->get_field_name(),
-                'value' => $value
-            ), $enabled, $checked);
+                'value' => $value,
+            ],
+            $enabled,
+            $checked
+        );
     }
 
     /**
@@ -190,24 +198,27 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
     public function get_contains_answer_expectation_currentanswer($dd, $answerindex, $value, $currentanswer, $enabled = true) {
         $fieldname = qtype_answersheet_test_helper::get_fieldname_from_definition($dd, $answerindex);
         return $this->get_contains_radio_expectation(
-            array(
+            [
                 'name' => $this->quba->get_field_prefix($this->slot)
                     . qtype_answersheet_test_helper::get_fieldname_from_definition($dd, $answerindex),
-                'value' => $value
-            ), $enabled, $currentanswer[$fieldname] == $value);
+                'value' => $value,
+            ],
+            $enabled,
+            $currentanswer[$fieldname] == $value
+        );
     }
 
     /**
      * Test deferred feedback
      */
-    public function test_deferred_feedback() {
+    public function test_deferred_feedback(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
         $this->start_attempt_at_question($dd, 'deferredfeedback', 10);
 
         // Check the initial state.
@@ -220,7 +231,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 0, 3),
             $this->get_contains_answer_expectation($dd, 0, 4),
             $this->get_contains_answer_expectation($dd, 1, 1),
-            $this->get_does_not_contain_feedback_expectation());
+            $this->get_does_not_contain_feedback_expectation()
+        );
 
         // Save a partial answer.
         $fullright = qtype_answersheet_test_helper::create_full_right_response($dd);
@@ -252,7 +264,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 4, $fullright),
             $this->get_contains_answer_expectation_currentanswer($dd, 1, 1, $fullright),
             $this->get_does_not_contain_correctness_expectation(),
-            $this->get_does_not_contain_feedback_expectation());
+            $this->get_does_not_contain_feedback_expectation()
+        );
 
         // Finish the attempt.
         $this->quba->finish_all_questions();
@@ -267,7 +280,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 3, $fullright),
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 4, $fullright),
             $this->get_contains_answer_expectation_currentanswer($dd, 1, 1, $fullright),
-            $this->get_contains_correct_expectation());
+            $this->get_contains_correct_expectation()
+        );
 
         // Change the right answer a bit.
         $indexedanswers = array_values($dd->answers);
@@ -284,14 +298,14 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
     /**
      * Test deferred feedback unanswered
      */
-    public function test_deferred_feedback_unanswered() {
+    public function test_deferred_feedback_unanswered(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
         $this->start_attempt_at_question($dd, 'deferredfeedback', 10);
 
         // Check the initial state.
@@ -304,7 +318,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 0, 4),
             $this->get_contains_answer_expectation($dd, 1, 1),
             $this->get_does_not_contain_correctness_expectation(),
-            $this->get_does_not_contain_feedback_expectation());
+            $this->get_does_not_contain_feedback_expectation()
+        );
         $this->check_step_count(1);
 
         // Save a blank response.
@@ -320,7 +335,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 0, 4),
             $this->get_contains_answer_expectation($dd, 1, 1),
             $this->get_does_not_contain_correctness_expectation(),
-            $this->get_does_not_contain_feedback_expectation());
+            $this->get_does_not_contain_feedback_expectation()
+        );
         $this->check_step_count(1);
 
         // Finish the attempt.
@@ -334,20 +350,21 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 0, 2),
             $this->get_contains_answer_expectation($dd, 0, 3),
             $this->get_contains_answer_expectation($dd, 0, 4),
-            $this->get_contains_answer_expectation($dd, 1, 1));
+            $this->get_contains_answer_expectation($dd, 1, 1)
+        );
     }
 
     /**
      * Test deferred feedback partial unanswered
      */
-    public function test_deferred_feedback_partial_answer() {
+    public function test_deferred_feedback_partial_answer(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
         $this->start_attempt_at_question($dd, 'deferredfeedback', 10);
 
         // Check the initial state.
@@ -359,7 +376,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 0, 3),
             $this->get_contains_answer_expectation($dd, 0, 4),
             $this->get_does_not_contain_correctness_expectation(),
-            $this->get_does_not_contain_feedback_expectation());
+            $this->get_does_not_contain_feedback_expectation()
+        );
 
         // Save a partial answer.
         $fullright = qtype_answersheet_test_helper::create_full_right_response($dd);
@@ -379,7 +397,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 4, 3),
             $this->get_contains_answer_expectation($dd, 4, 4),
             $this->get_does_not_contain_correctness_expectation(),
-            $this->get_does_not_contain_feedback_expectation());
+            $this->get_does_not_contain_feedback_expectation()
+        );
 
         // Finish the attempt.
         $this->quba->finish_all_questions();
@@ -396,28 +415,31 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation($dd, 4, 2),
             $this->get_contains_answer_expectation($dd, 4, 3),
             $this->get_contains_answer_expectation($dd, 4, 4),
-            $this->get_contains_partcorrect_expectation());
+            $this->get_contains_partcorrect_expectation()
+        );
     }
 
     /**
      * Test interactive grading
      */
-    public function test_interactive_grading() {
+    public function test_interactive_grading(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, true, true),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
         $dd->penalty = 0.3;
         $this->start_attempt_at_question($dd, 'interactive', 10);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
-        $this->assertEquals('interactive',
-            $this->quba->get_question_attempt($this->slot)->get_behaviour_name());
+        $this->assertEquals(
+            'interactive',
+            $this->quba->get_question_attempt($this->slot)->get_behaviour_name()
+        );
         $this->check_current_output(
             $this->get_contains_answer_expectation($dd, 4, 1),
             $this->get_contains_answer_expectation($dd, 4, 2),
@@ -427,13 +449,17 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
             $this->get_does_not_contain_num_parts_correct(),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Submit an response with the first two parts right.
         $fullright = qtype_answersheet_test_helper::create_full_right_response($dd);
         $fullwrong = qtype_answersheet_test_helper::create_full_wrong_response($dd);
-        $partialright = array_merge(array_slice($fullright, 0, 3),
-            array_slice($fullwrong, 3, 7), ['-submit' => 1]);
+        $partialright = array_merge(
+            array_slice($fullright, 0, 3),
+            array_slice($fullwrong, 3, 7),
+            ['-submit' => 1]
+        );
         $this->process_submission($partialright);
 
         // Verify.
@@ -458,19 +484,26 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
 
         // Check that extract responses will return the reset data.
         $prefix = $this->quba->get_field_prefix($this->slot);
-        $this->assertEquals(array_slice($fullright, 0, 3),
-            $this->quba->extract_responses($this->slot,
-                array($prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($dd, 0) => '1',
+        $this->assertEquals(
+            array_slice($fullright, 0, 3),
+            $this->quba->extract_responses(
+                $this->slot,
+                [$prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($dd, 0) => '1',
                     $prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($dd, 1) => '2',
                     $prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($dd, 2) => '3',
-                    '-tryagain' => 1)));
+                '-tryagain' => 1]
+            )
+        );
 
         // Do try again.
         // keys p3 and p4 are extra hidden fields to clear data.
         $fullblank = qtype_answersheet_test_helper::create_full_response_with_value($dd, '');
 
-        $partialblanktryagain = array_merge(array_slice($fullright, 0, 3),
-            array_slice($fullblank, 3, 7), ['-tryagain' => 1]);
+        $partialblanktryagain = array_merge(
+            array_slice($fullright, 0, 3),
+            array_slice($fullblank, 3, 7),
+            ['-tryagain' => 1]
+        );
         $this->process_submission($partialblanktryagain);
 
         // Verify.
@@ -490,13 +523,16 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(2),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Submit an response with the first and last parts right.
-        $partialright = array_merge(array_slice($fullright, 0, 1),
+        $partialright = array_merge(
+            array_slice($fullright, 0, 1),
             array_slice($fullblank, 1, 5),
             array_slice($fullright, 6, 4),
-            ['-submit' => 1]);
+            ['-submit' => 1]
+        );
         $this->process_submission($partialright);
 
         // Verify.
@@ -516,7 +552,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_contains_hint_expectation('This is the second hint'),
             $this->get_contains_num_parts_correct(5),
-            $this->get_contains_standard_partiallycorrect_combined_feedback_expectation());
+            $this->get_contains_standard_partiallycorrect_combined_feedback_expectation()
+        );
 
         // Do try again.
         $this->process_submission($partialblanktryagain);
@@ -534,7 +571,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(1),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Submit the right answer.
         $this->process_submission(array_merge($fullright, ['-submit' => 1]));
@@ -552,20 +590,21 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_correct_expectation(),
             $this->get_no_hint_visible_expectation(),
             $this->get_does_not_contain_num_parts_correct(),
-            $this->get_contains_standard_correct_combined_feedback_expectation());
+            $this->get_contains_standard_correct_combined_feedback_expectation()
+        );
     }
 
     /**
      * Test interactive correct no submit
      */
-    public function test_interactive_correct_no_submit() {
+    public function test_interactive_correct_no_submit(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
 
         $this->start_attempt_at_question($dd, 'interactive', 10);
 
@@ -580,7 +619,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Save the right answer.
         $fullright = qtype_answersheet_test_helper::create_full_right_response($dd);
@@ -599,7 +639,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 4, $fullright),
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_correct_expectation(),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Check regrading does not mess anything up.
         $this->quba->regrade_all_questions();
@@ -612,14 +653,14 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
     /**
      * Test interactive partial no submit
      */
-    public function test_interactive_partial_no_submit() {
+    public function test_interactive_partial_no_submit(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
-        );
+        ];
 
         $this->start_attempt_at_question($dd, 'interactive', 10);
 
@@ -635,7 +676,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Save the a partially right answer.
         $fullright = qtype_answersheet_test_helper::create_full_right_response($dd);
@@ -657,7 +699,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 4, $fullright),
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_partcorrect_expectation(),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Check regrading does not mess anything up.
         $this->quba->regrade_all_questions();
@@ -670,14 +713,14 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
     /**
      * Test interactive no right clears
      */
-    public function test_interactive_no_right_clears() {
+    public function test_interactive_no_right_clears(): void {
 
         // Create a answersheet question.
         $dd = test_question_maker::make_question('answersheet');
-        $dd->hints = array(
+        $dd->hints = [
             new question_hint_with_parts(23, 'This is the first hint.', FORMAT_MOODLE, false, true),
             new question_hint_with_parts(24, 'This is the second hint.', FORMAT_MOODLE, true, true),
-        );
+        ];
 
         $this->start_attempt_at_question($dd, 'interactive', 10);
 
@@ -693,7 +736,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
-            $this->get_no_hint_visible_expectation());
+            $this->get_no_hint_visible_expectation()
+        );
 
         // Save the a completely wrong answer.
         $fullwrong = qtype_answersheet_test_helper::create_full_wrong_response($dd);
@@ -709,7 +753,8 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 3, $fullwrong),
             $this->get_contains_answer_expectation_currentanswer($dd, 0, 4, $fullwrong),
             $this->get_does_not_contain_submit_button_expectation(),
-            $this->get_contains_hint_expectation('This is the first hint'));
+            $this->get_contains_hint_expectation('This is the first hint')
+        );
 
         // Do try again.
         $fullempty = qtype_answersheet_test_helper::create_full_response_with_value($dd, '');
@@ -730,5 +775,4 @@ class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_bas
             $this->get_no_hint_visible_expectation()
         );
     }
-
 }
