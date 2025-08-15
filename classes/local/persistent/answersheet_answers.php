@@ -45,10 +45,6 @@ class answersheet_answers extends persistent {
                 'type' => PARAM_INT,
                 'message' => new lang_string('invaliddata', 'qtype_answersheet', 'sprogramme:answerid'),
             ],
-            'questionid' => [
-                'type' => PARAM_INT,
-                'message' => new lang_string('invaliddata', 'qtype_answersheet', 'sprogramme:questionid'),
-            ],
             'moduleid' => [
                 'type' => PARAM_INT,
                 'message' => new lang_string('invaliddata', 'qtype_answersheet', 'sprogramme:moduleid'),
@@ -90,7 +86,23 @@ class answersheet_answers extends persistent {
      * @return array
      */
     public static function get_all_records_for_question(int $questionid): array {
-        return self::get_records(['questionid' => $questionid], 'moduleid, sortorder');
+        $allmodules = answersheet_module::get_records(['questionid' => $questionid], 'sortorder');
+        if (empty($allmodules)) {
+            return [];
+        }
+        // Loop through all modules to ensure we have the correct sort order.
+        $allanswers = [];
+        foreach ($allmodules as $module) {
+            $answersheetanswers = self::get_records(['moduleid' => $module->get('id')], 'sortorder');
+            if (empty($answersheetanswers)) {
+                continue;
+            }
+            foreach ($answersheetanswers as $answer) {
+                // Ensure we have the correct sort order.
+                $allanswers[] = $answer;
+            }
+        }
+        return $allanswers;
     }
 
     /**
@@ -100,5 +112,18 @@ class answersheet_answers extends persistent {
      */
     public static function get_all_records_for_module(int $moduleid): array {
         return self::get_records(['moduleid' => $moduleid], 'sortorder');
+    }
+
+    /**
+     * Get the table name for this persistent class.
+     *
+     * @return int
+     */
+    public function get_module_type(): int {
+        $module = answersheet_module::get_record(['id' => $this->get('moduleid')]);
+        if (!$module) {
+            return 'unknown';
+        }
+        return $module->get('type');
     }
 }

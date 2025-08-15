@@ -94,10 +94,9 @@ class renderer extends qtype_with_combined_feedback_renderer {
         foreach ($qa->get_question()->answers as $answerkey => $answerinfo) {
             $answer = $this->get_answer($qa, $answerinfo->id);
 
-            $option = $answer->get('options');
             $name = $answer->get('name');
             $questionname = ($name != '') ? $name : $index;
-            $currentresponse = ($option != '') ? $option : $answerinfo->answer;
+            $currentresponse = $answerinfo->answer;
 
             $answertypetext = get_string('option', 'qtype_answersheet', $currentresponse);
             $textresponses[] = "{$questionname} -> $answertypetext";

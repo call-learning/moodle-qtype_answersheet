@@ -28,44 +28,6 @@
  */
 class qtype_answersheet_question extends question_graded_automatically {
     /**
-     * @var array $answers
-     */
-    public $answers = null;
-
-    /**
-     * @var array $aanwers
-     */
-    public $penalty = 0.1;
-
-    /**
-     * @var string $correctfeedback
-     */
-    public string $correctfeedback = '';
-
-    /**
-     * @var string $partiallycorrectfeedback
-     */
-    public string $correctfeedbackformat = FORMAT_HTML;
-
-    /**
-     * @var string $partiallycorrectfeedback
-     */
-    public string $partiallycorrectfeedback = '';
-    /**
-     * @var string $partiallycorrectfeedbackformat
-     */
-    public string $partiallycorrectfeedbackformat = FORMAT_HTML;
-
-    /**
-     * @var string $incorrectfeedback
-     */
-    public string $incorrectfeedback = '';
-    /**
-     * @var string $incorrectfeedbackformat
-     */
-    public string $incorrectfeedbackformat = FORMAT_HTML;
-
-    /**
      * @var int $startnumbering
      */
     public int $startnumbering = 1;
@@ -86,7 +48,15 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function get_expected_data() {
         $data = [];
         foreach (array_keys($this->answers) as $key) {
-            $data['answer' . $key] = PARAM_RAW_TRIMMED;
+            $answer = \qtype_answersheet\local\persistent\answersheet_answers::get_record(['answerid' => $key]);
+            if (!$answer) {
+                continue;
+            }
+            $module = \qtype_answersheet\local\persistent\answersheet_module::get_record(['id' => $answer->get('moduleid')]);
+            if (!$module) {
+                continue;
+            }
+            $data['answer' . $key] = $module->get_data_type();
         }
         return $data;
     }
@@ -100,7 +70,28 @@ class qtype_answersheet_question extends question_graded_automatically {
         $response = [];
         foreach ($this->answers as $key => $answer) {
             // Remove any leading or trailing whitespace and convert to lower case.
-            $response[$this->field($key)] = trim(strtolower($answer->answer));
+            $answersheet = \qtype_answersheet\local\persistent\answersheet_answers::get_record(['answerid' => $key]);
+            $type = $answersheet->get_module_type();
+            $answervalue = $answersheet->get('answer');
+            $response[$this->field($key)] = trim($answervalue);
+            switch($type) {
+                case \qtype_answersheet\local\persistent\answersheet_module::RADIO_CHECKED:
+                    // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
+                    $options = $answersheet->get('options');
+                    if ($options) {
+                        $options = json_decode($options, true);
+                        $options = array_flip($options);
+                        if (isset($options[$answervalue])) {
+                            $answervalue = $options[$answervalue];
+                            $response[$this->field($key)] = intval($answervalue);
+                        }
+                    }
+                    break;
+                case \qtype_answersheet\local\persistent\answersheet_module::FREE_TEXT:
+                case \qtype_answersheet\local\persistent\answersheet_module::LETTER_BY_LETTER:
+                default:
+                    $response[$this->field($key)] = trim($answervalue);
+            }
         }
         return $response;
     }
@@ -328,11 +319,39 @@ class qtype_answersheet_question extends question_graded_automatically {
      * @return int 1 if correct, 0 if not
      */
     public function compare_response_with_answer($currentresponse, $answerinfo) {
-        $answer = trim(strtolower($answerinfo->answer));
-        if ($currentresponse == $answer) {
+        if ($this->compare_keys($currentresponse,$answerinfo->answer)) {
             return 1;
         } else {
             return 0;
         }
+    }
+
+    /**
+     * Compare two keys in a case-insensitive manner and without accents if possible.
+     * @param string $key1
+     * @param string $key2
+     * @return bool
+     */
+    private function compare_keys(string $key1, string $key2) {
+        // Compare keys in a case-insensitive manner.
+        // We use trim to remove any leading or trailing whitespace.
+        // Can you compare without accents ?
+        if (function_exists('iconv')) {
+            $key1 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key1);
+            $key2 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key2);
+        }
+        return strcasecmp(trim($key1), trim($key2)) === 0;
+    }
+
+    /**
+     * Normalize the answer
+     *
+     * @param mixed $input The string to normalize.
+     */
+    private function normalise_answer(mixed $input): mixed {
+        if (is_numeric($input)) {
+            return intval($input) ;
+        }
+        return trim($input);
     }
 }

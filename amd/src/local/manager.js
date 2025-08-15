@@ -48,7 +48,7 @@ class Manager {
      * The temp row id.
      * @type {Number}
      */
-    temprowid = 2;
+    temprowid = 1000;
 
     /**
      * The element.
@@ -87,7 +87,7 @@ class Manager {
         this.questionid = parseInt(questionid);
         this.addEventListeners();
         this.getDatagrid();
-        this.tempfield = document.querySelector('input[name="newquestion"]');
+        this.tempfield = document.querySelector('input[name="jsonquestions"]');
     }
 
     /**
@@ -170,20 +170,26 @@ class Manager {
      * @return {Array} The parsed rows.
      */
     async parseModules(modules) {
-        modules.forEach(async(mod) => {
+        for (const mod of modules) {
             const type = this.TYPES[mod.type];
             mod[type] = true;
             mod.indicator = await this.getIndicator(mod.numoptions, mod.type);
             mod.rows.map(row => {
+                let selectedValue = '';
+                row.cells.forEach(cell => {
+                    if (cell.column === 'answer') {
+                        selectedValue = cell.value;
+                    }
+                });
                 row.cells = row.cells.map(cell => {
-                    const column = mod.columns.find(column => column.column == cell.column);
+                    const column = mod.columns.find(column => column.column === cell.column);
                     // Clone the column properties to the cell but keep the cell properties.
                     cell = Object.assign({}, cell, column);
                     if (cell.type === 'select') {
                         // Clone the options array to avoid shared references
                         cell.options = cell.options.map(option => {
                             const clonedOption = Object.assign({}, option);
-                            if (clonedOption.name == cell.value) {
+                            if (clonedOption.name === selectedValue) {
                                 clonedOption.selected = true;
                             }
                             return clonedOption;
@@ -194,7 +200,7 @@ class Manager {
                 });
                 return row;
             });
-        });
+        }
         return modules;
     }
 
@@ -252,13 +258,15 @@ class Manager {
                     this.checkCellValue(cell);
                     Object.keys(rowObject.rows.cells).forEach(key => {
                         cleanedCell[key] = cell[key];
+                        if (cell.column === 'options' && key === 'value') {
+                            cleanedCell[key] = cell['options']?.map(option => option.name);
+                        }
                     });
                     return cleanedCell;
                 });
                 return cleanedRow;
             });
             const cleanedModule = {};
-            cleanedModule.id = module.moduleid;
             cleanedModule.sortorder = module.modulesortorder;
             cleanedModule.name = module.modulename;
             cleanedModule.type = module.type;
@@ -312,21 +320,16 @@ class Manager {
     async addRow(btn) {
         const modules = State.getValue('modules');
 
-        let rowid = btn.dataset.id;
         const moduleid = btn.closest('[data-region="module"]').dataset.id;
-        const module = modules.find(m => m.moduleid == moduleid);
+        const module = modules.find(m => m.id == moduleid);
         const rows = module.rows;
-        // When called from the link under the table, the rowid is not set.
-        if (rowid == -1) {
-            rowid = rows[rows.length - 1].id;
-        }
 
-        const row = await this.createRow(moduleid, rows.length + 1);
+        const row = await this.createRow(rows.length + 1);
         if (!row) {
             return;
         }
         // Inject the row after the clicked row.
-        rows.splice(rows.indexOf(rows.find(r => r.id == rowid)) + 1, 0, row);
+        rows.push(row);
         State.setValue('modules', modules);
         this.resetRowSortorder();
     }
@@ -334,17 +337,14 @@ class Manager {
     /**
      * Create a new row.
      *
-     * @param {int} moduleid The moduleid.
      * @param {int} sortorder The sortorder.
      * @return {Promise} The promise.
      */
-    async createRow(moduleid, sortorder) {
-        let rowid = this.temprowid++;
-
+    async createRow(sortorder) {
+        let rowid = this.createTempId(this.temprowid++);
         return new Promise((resolve) => {
             const row = {};
             row.id = rowid;
-            row.moduleid = moduleid;
             row.numoptions = 4;
             row.sortorder = sortorder;
             row.type = 1;
@@ -373,9 +373,9 @@ class Manager {
      */
     async deleteRow(btn) {
         const modules = State.getValue('modules');
-        const rowid = btn.closest('[data-row]').dataset.index;
+        const rowid = btn.closest('[data-row]').dataset.id;
         const moduleid = btn.closest('[data-region="module"]').dataset.id;
-        const module = modules.find(m => m.moduleid == moduleid);
+        const module = modules.find(m => m.id == moduleid);
         if (module.rows.length > 1) {
             const index = module.rows.findIndex(r => r.id == rowid);
             module.rows.splice(index, 1);
@@ -396,21 +396,23 @@ class Manager {
         const cell = input.closest('[data-cell]');
         const value = input.value;
         const columnid = cell.dataset.columnid;
-        const index = row.dataset.index;
+        const rowid = row.dataset.id;
         const modules = State.getValue('modules');
         modules.forEach(module => {
             // Find the correct cell in the row.
-            const rowIndex = module.rows.findIndex(r => r.id == index);
+            const rowIndex = module.rows.findIndex(r => r.id == rowid);
             if (rowIndex === -1) {
                 return;
             }
-            const cellIndex = module.rows[rowIndex].cells.findIndex(c => c.columnid == columnid);
-            module.rows[rowIndex].cells[cellIndex].value = value;
-            if (module.rows[rowIndex].cells[cellIndex].type === 'select') {
-                module.rows[rowIndex].cells[cellIndex].options.forEach(option => {
+            const cellIndexOption = module.rows[rowIndex].cells.findIndex(c => c.columnid == columnid);
+            module.rows[rowIndex].cells[cellIndexOption].value = value;
+            if (module.rows[rowIndex].cells[cellIndexOption].type === 'select') {
+                module.rows[rowIndex].cells[cellIndexOption].options.forEach(option => {
                     option.selected = option.name === value;
                 });
             }
+            const cellIndexAnswer = module.rows[rowIndex].cells.findIndex(c => c.column == 'answer');
+            module.rows[rowIndex].cells[cellIndexAnswer].value = value;
         });
     }
 
@@ -431,7 +433,7 @@ class Manager {
         moduleElement.classList.add(this.TYPES[type]);
         const modules = State.getValue('modules');
         modules.forEach(moduleObject => {
-            if (moduleObject.moduleid == moduleid) {
+            if (moduleObject.id === moduleid) {
                 moduleObject.modulename = name;
                 moduleObject.type = parseInt(type);
                 moduleObject.class = this.TYPES[type];
@@ -498,7 +500,7 @@ class Manager {
     async deleteModule(btn) {
         const modules = State.getValue('modules');
         const moduleid = btn.closest('[data-region="module"]').dataset.id;
-        const module = modules.find(m => m.moduleid == moduleid);
+        const module = modules.find(m => m.id == moduleid);
         return new Promise((resolve) => {
             const index = modules.indexOf(module);
             modules.splice(index, 1);
@@ -513,23 +515,30 @@ class Manager {
      */
     async addModule() {
         const modules = State.getValue('modules');
-        const index = modules.length;
         const numoptions = 4;
-        let moduleid = modules.length + 1;
-        const row = await this.createRow(moduleid, 1);
+
         const module = {
-            moduleid: moduleid,
-            modulesortorder: index + 1,
+            id: this.createTempId(modules.length + 1),
+            modulesortorder: modules.length + 1,
             modulename: ' ',
             type: 1,
             numoptions: numoptions,
             indicator: this.getIndicator(numoptions, 1),
-            rows: [row],
+            rows: [await this.createRow(1)],
         };
         module[this.TYPES['1']] = true;
         modules.push(module);
-        State.setValue('modules', modules);
-        return moduleid;
+        await State.setValue('modules', modules);
+    }
+
+    /**
+     * Create a temporary ID for a row.
+     * This is used to identify rows that are not yet saved.
+     * @param {number} numericId
+     * @return {string}
+     */
+    createTempId(numericId) {
+        return `tmp-${numericId}`;
     }
 
     /**

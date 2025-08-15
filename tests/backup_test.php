@@ -54,7 +54,7 @@ final class backup_test extends \advanced_testcase {
         $quizcontext = context_module::instance($quiz->cmid);
 
         $cat = $questiongenerator->create_question_category(['contextid' => $quizcontext->id]);
-        $question = $questiongenerator->create_question('answersheet', 'ten', ['category' => $cat->id]);
+        $question = $questiongenerator->create_question('answersheet', 'standard', ['category' => $cat->id]);
 
         return [$course, $quiz, $question, $coregenerator, $questiongenerator];
     }
@@ -65,7 +65,7 @@ final class backup_test extends \advanced_testcase {
     public function test_duplicate_match_question(): void {
         global $DB;
 
-        [$course, $quiz, $question, $coregenerator, $questiongenerator] = $this->initialize_test_environment();
+        [$course, $quiz] = $this->initialize_test_environment();
 
         // Store some counts.
         $numquizzes = count(get_fast_modinfo($course)->instances['quiz']);
@@ -105,8 +105,11 @@ final class backup_test extends \advanced_testcase {
         // Store original counts.
         $originalquizcount = $DB->count_records('quiz');
         $originalquestioncount = $DB->count_records('question', ['qtype' => 'answersheet']);
-        $originalmodulecount = \qtype_answersheet\local\persistent\answersheet_module::count_records();
-        $originaldocscount = \qtype_answersheet\answersheet_docs::count_records();
+        $user1 = $coregenerator->create_user();
+
+        // Attempt the question in the quiz.
+
+
         $this->setAdminUser();
         // Perform backup.
         $bc = new backup_controller(
@@ -119,23 +122,35 @@ final class backup_test extends \advanced_testcase {
         );
         $bc->execute_plan();
         $backupid = $bc->get_backupid();
+        $backupbasepath = $bc->get_plan()->get_basepath();
+        $results = $bc->get_results();
+        $file = $results['backup_destination'];
         $bc->destroy();
 
-        // Create new course for restore.
-        $newcourse = $coregenerator->create_course();
+        // Check if we need to unzip the file because the backup temp dir does not contains backup files.
+        if (!file_exists($backupbasepath . "/moodle_backup.xml")) {
+            $file->extract_to_pathname(get_file_packer('application/vnd.moodle.backup'), $backupbasepath);
+        }
+
+        $newcourseid = \restore_dbops::create_new_course(
+            $course->fullname . 'RESTORED',
+            $course->shortname . 'RESTORED',
+            $course->category
+        );
 
         // Perform restore.
         $rc = new restore_controller(
             $backupid,
-            $newcourse->id,
+            $newcourseid,
             backup::INTERACTIVE_NO,
-            backup::MODE_GENERAL,
+            backup::MODE_SAMESITE,
             get_admin()->id,
-            backup::TARGET_NEW_COURSE
+            backup::TARGET_NEW_COURSE,
         );
         $rc->execute_precheck();
         $rc->execute_plan();
         $rc->destroy();
+
 
         // Verify restored data.
         $this->assertEquals($originalquizcount + 1, $DB->count_records('quiz'));
@@ -144,38 +159,16 @@ final class backup_test extends \advanced_testcase {
         // Get restored question.
         $restoredquestion = $DB->get_record_sql(
             "SELECT q.* FROM {question} q 
-             JOIN {question_categories} qc ON q.category = qc.id
+             JOIN {question_versions} qv ON q.id = qv.questionid
+             JOIN {question_bank_entries} qbe ON qv.questionbankentryid = qbe.id
+             JOIN {question_categories} qc ON qbe.questioncategoryid = qc.id
              JOIN {context} ctx ON qc.contextid = ctx.id
              JOIN {course_modules} cm ON ctx.instanceid = cm.id
              WHERE q.qtype = ? AND cm.course = ?",
-            ['answersheet', $newcourse->id]
+            ['answersheet', $newcourseid]
         );
-
-        $this->assertNotEmpty($restoredquestion);
-
-        // Verify answersheet-specific data was restored.
-        $restoredmodulecount = \qtype_answersheet\local\persistent\answersheet_module::count_records(
-            ['questionid' => $restoredquestion->id]
-        );
-        $this->assertEquals(2, $restoredmodulecount);
-
-        $restoreddocscount = \qtype_answersheet\answersheet_docs::count_records([
-            'questionid' => $restoredquestion->id,
-            'type' => \qtype_answersheet\answersheet_docs::AUDIO_FILE_TYPE,
-        ]);
-        $this->assertEquals(1, $restoreddocscount);
-
-        // Verify question data integrity.
-        $answersheetdata = question_bank::load_question_data($restoredquestion->id);
-        $this->assertNotEmpty($answersheetdata->options->answers);
-        $this->assertCount(10, $answersheetdata->options->answers);
-        $this->assertEquals(1, $answersheetdata->options->startnumbering);
-
-        // Verify files were restored.
-        $fs = get_file_storage();
-        $files = $fs->get_area_files($answersheetdata->contextid, 'qtype_answersheet', 'audio');
-        $this->assertCount(2, $files); // Including '.' directory entry
-
+        $questiontocheck = question_bank::load_question_data($restoredquestion->id);
+        $this->verify_restored_question($questiontocheck);
         // Clean up backup files.
         $backupbasepath = $CFG->tempdir . '/backup';
         if (is_dir($backupbasepath . '/' . $backupid)) {
@@ -196,14 +189,14 @@ final class backup_test extends \advanced_testcase {
 
         // Verify basic question properties.
         $this->assertNotEmpty($answersheetdata->options->answers);
-        $this->assertCount(7, $answersheetdata->options->answers);
-        $this->assertEquals(3, $answersheetdata->options->startnumbering);
+        $this->assertCount(6, $answersheetdata->options->answers);
+        $this->assertEquals(2, $answersheetdata->options->startnumbering);
 
         // Verify answersheet-specific data.
         $modulecount = \qtype_answersheet\local\persistent\answersheet_module::count_records(
             ['questionid' => $question->id]
         );
-        $this->assertEquals(2, $modulecount, 'Expected 2 answersheet modules');
+        $this->assertEquals(3, $modulecount, 'Expected 1 answersheet modules');
 
         $docscount = \qtype_answersheet\answersheet_docs::count_records([
             'questionid' => $question->id,
@@ -212,6 +205,12 @@ final class backup_test extends \advanced_testcase {
 
         $this->assertEquals(1, $docscount, 'Expected 1 audio document');
 
+        $docscount = \qtype_answersheet\answersheet_docs::count_records([
+            'questionid' => $question->id,
+            'type' => \qtype_answersheet\answersheet_docs::DOCUMENT_FILE_TYPE,
+        ]);
+
+        $this->assertEquals(1, $docscount, 'Expected 1 pdf document');
         // Verify files were restored.
         $fs = get_file_storage();
         $files = $fs->get_area_files($answersheetdata->contextid, 'qtype_answersheet', 'audio');

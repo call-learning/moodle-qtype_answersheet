@@ -64,10 +64,10 @@ class qtype_answersheet_edit_form extends question_edit_form {
         );
         $mform->setExpanded('answerhdr', 1);
         $renderer = new sheet_renderer($PAGE, $OUTPUT);
-        $programm = new answersheet($id);
-        $mform->addElement('hidden', 'newquestion', '');
-        $mform->setType('newquestion', PARAM_TEXT);
-        $mform->addElement('html', $renderer->render($programm));
+        $answersheet = new answersheet($id);
+        $mform->addElement('hidden', 'jsonquestions', '');
+        $mform->setType('jsonquestions', PARAM_RAW);
+        $mform->addElement('html', $renderer->render($answersheet));
 
         $this->add_combined_feedback_fields(true);
         $mform->disabledIf('shownumcorrect', 'single', 'eq', 1);
@@ -128,16 +128,6 @@ class qtype_answersheet_edit_form extends question_edit_form {
             }
 
             $question->fraction[$key] = 0 + $answer->fraction;
-
-            // Evil hack alert. Formslib can store defaults in two ways for
-            // repeat elements:
-            // ->_defaultValues['fraction[0]'] and
-            // ->_defaultValues['fraction'][0].
-            // The $repeatedoptions['fraction']['default'] = 0 bit above means
-            // that ->_defaultValues['fraction[0]'] has already been set, but we
-            // are using object notation here, so we will be setting
-            // ->_defaultValues['fraction'][0]. That does not work, so we have
-            // to unset ->_defaultValues['fraction[0]'].
             unset($this->_form->_defaultValues["fraction[{$key}]"]);
 
             $question->feedback[$key] = $answer->feedback;
@@ -156,6 +146,34 @@ class qtype_answersheet_edit_form extends question_edit_form {
         return $question;
     }
 
+
+    #[\Override]
+    protected function data_preprocessing_extra_answer_fields($question, $extraanswerfields) {
+        // Because we have additional extran answer fields that looks like the main fields,
+        // we need a way write them somewhere else
+        $extrafieldsdata = array();
+        // First, prepare an array if empty arrays for each extra answer fields data.
+        foreach ($extraanswerfields as $field) {
+            $extrafieldsdata[$field] = array();
+        }
+
+        // Fill arrays with data from $question->options->answers.
+        $key = 0;
+        foreach ($question->options->answers as $answer) {
+            foreach ($extraanswerfields as $field) {
+                // See hack comment in {@link data_preprocessing_answers()}.
+                unset($this->_form->_defaultValues["{$field}[{$key}]"]);
+                $extrafieldsdata[$field][$key] = $this->data_preprocessing_extra_answer_field($answer, $field);
+            }
+            $key++;
+        }
+        $question->extraanswerfields = [];
+        // Set this data in the $question object.
+        foreach ($extraanswerfields as $field) {
+            $question->extraanswerfields[$field] = $extrafieldsdata[$field];
+        }
+        return $question;
+    }
     /**
      * Perform the necessary preprocessing for audio and document fields
      *

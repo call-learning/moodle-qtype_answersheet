@@ -22,11 +22,11 @@
     Example context (json):
     {
         "questionid": 1,
-        "cssurl": "http://example.com/customfield/sprogramme/styles.css",
+        "cssurl": "http://example.com/customfield/squestion-answere/styles.css",
         "rowname": "Row 1",
         "modules": [
             {
-                "moduleid": 9,
+                "id": 9,
                 "modulename": "Module",
                 "modulesortorder": 0,
                 "rows": [
@@ -373,7 +373,7 @@
     }
 }}
 {{#modules}}
-    <div class="modules mb-5 {{{class}}}" data-region="module" data-id="{{moduleid}}">
+    <div class="modules mb-5 {{{class}}}" data-region="module" data-id="{{id}}">
         <div class="d-flex mb-1 align-items-center">
             {{#editor}}
                 <div class="mb-0 d-flex align-items-center p-1">
@@ -395,19 +395,19 @@
                     </div>
                 </div>
                 <div class="plusminusbuttons m-1">
-                    <button class="btn btn-icon icon-no-margin" data-id="{{moduleid}}" data-action="moduleremoveoption">{{#pix}}e/delete, core, {{#str}}remove{{/str}}{{/pix}}</button>
-                    <button class="btn btn-icon icon-no-margin" data-id="{{moduleid}}" data-action="moduleaddoption">{{#pix}}e/insert, core, {{#str}}add{{/str}}{{/pix}}</button>
+                    <button class="btn btn-icon icon-no-margin" data-id="{{id}}" data-action="moduleremoveoption">{{#pix}}e/delete, core, {{#str}}remove{{/str}}{{/pix}}</button>
+                    <button class="btn btn-icon icon-no-margin" data-id="{{id}}" data-action="moduleaddoption">{{#pix}}e/insert, core, {{#str}}add{{/str}}{{/pix}}</button>
                 </div>
                 <div class="indicator small ml-1 mr-1" data-region="indicator">
                     {{{indicator}}}
                 </div>
-                <button class="btn btn-icon icon-no-margin mr-1 ml-3" data-id="{{moduleid}}" data-action="deletemodule">{{#pix}}i/delete, core, {{#str}}delete{{/str}}{{/pix}}</button>
+                <button class="btn btn-icon icon-no-margin mr-1 ml-3" data-id="{{id}}" data-action="deletemodule">{{#pix}}i/delete, core, {{#str}}delete{{/str}}{{/pix}}</button>
             {{/editor}}
             {{^editor}}
                 <h4 class="mb-0">{{{modulename}}}</h4>
             {{/editor}}
         </div>
-        <table class="programm-table ml-1 {{^editor}}standard{{/editor}}{{#editor}}editor{{/editor}}">
+        <table class="question-answer-table ml-1 {{^editor}}standard{{/editor}}{{#editor}}editor{{/editor}}">
             <thead>
                 <tr data-region="columns">
                    {{> qtype_answersheet/table/columns}}

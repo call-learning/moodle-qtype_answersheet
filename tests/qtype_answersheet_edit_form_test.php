@@ -63,6 +63,7 @@ class qtype_answersheet_edit_form_test extends \advanced_testcase {
         require_once($CFG->dirroot . '/question/type/edit_question_form.php');
         require_once($CFG->dirroot . '/question/type/answersheet/edit_answersheet_form.php');
         $this->setAdminUser();
+        $this->resetAfterTest();
 
         $syscontext = context_system::instance();
         $category = question_make_default_categories(array($syscontext));

@@ -23,7 +23,6 @@
  */
 
 use qtype_answersheet\answersheet_docs;
-use qtype_answersheet\local\api\answersheet as answersheet_api;
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
 use qtype_answersheet\utils;
@@ -31,6 +30,16 @@ use qtype_answersheet\utils;
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
+
+/**
+ * Few notes on the implementation:
+ * - The answersheet question type is a complex question type that allows for various types of questions
+ *   to be created and managed within a single question.
+ *  - It uses a JSON structure to store the question data, which allows for flexibility in the
+ *  types of questions that can be created.
+ * Here we do not use the questiontype::extra_answer_field() method to link to other tables such as answers
+ * or modules because we managed that in the answersheet_api::set_records() method.
+ */
 
 /**
  * Class that represents a answersheet question type.
@@ -41,193 +50,107 @@ require_once($CFG->libdir . '/questionlib.php');
  * in various formats.
  */
 class qtype_answersheet extends question_type {
-    // Override functions as necessary from the parent class located at
-    // /question/type/questiontype.php.
-    /**
-     * Save question options
-     *
-     * @param object $question
-     * @return object|void
-     */
+
+    #[\Override]
     public function save_question_options($question) {
-        // The feedback are supposed to be editor, but to speed up the page rendering, we will use plain
-        // text fields. This means we will need to create mock editor structure.
+        // Ensure arrays are initialized.
+        $question->answer = $question->answer ?? [];
+        $question->fraction = $question->fraction ?? [];
+        $question->feedback = $question->feedback ?? [];
 
-        // Handle case where newquestion might not be defined (e.g., during testing)
-        $formjsondata = [];
-        if (isset($question->newquestion) && !empty($question->newquestion)) {
-            $formjsondata = json_decode($question->newquestion, true);
-        }
+        // Format feedbacks.
+        $question->feedback = array_map(fn($feedbacktext) => [
+            'format' => FORMAT_PLAIN,
+            'text' => $feedbacktext,
+        ], $question->feedback);
 
-        answersheet_api::set_records($question->id, $formjsondata);
-        $modules = answersheet_api::get_data($question->id);
-        $newanswers = [];
-        foreach ($modules as $module) {
-            $type = answersheet_module::TYPES[$module['type']];
-            foreach ($module['rows'] as $row) {
-                $newquestion = [];
-                $newquestion['id'] = $row['id'];
-                foreach ($row['cells'] as $cell) {
-                    $newquestion[$cell['column']] = $cell['value'];
-                }
-                if ($type == 'radiochecked') {
-                    $value = ord($newquestion['options']) - 64;
-                    $newquestion['value'] = $value;
-                } else if ($type == 'letterbyletter' || $type == 'freetext') {
-                    $newquestion['value'] = $newquestion['answer'];
-                }
-                $newanswers[] = $newquestion;
-            }
-        }
-
-        // Initialize arrays if they don't exist
-        if (!isset($question->answer)) {
-            $question->answer = [];
-        }
-        if (!isset($question->answersheetanswer)) {
-            $question->answersheetanswer = [];
-        }
-        if (!isset($question->fraction)) {
-            $question->fraction = [];
-        }
-        if (!isset($question->feedback)) {
-            $question->feedback = [];
-        }
-
-        foreach ($newanswers as $answer) {
-            $question->answer[] = $answer['value'];
-            $question->answersheetanswer[] = $answer['id'];
-            $question->fraction[] = 0;
-            $question->feedback[] = $answer['feedback'];
-        }
-
-        $feedbacks = [];
-        foreach ($question->feedback as $key => $feedbacktext) {
-            $feedbacks[] = [
-                'format' => FORMAT_PLAIN,
-                'text' => $feedbacktext,
-            ];
-        }
-        $question->feedback = $feedbacks;
-        $this->save_question_answers($question);
-        $this->save_hints($question);
-
-        $this->save_documents($question);
-        // This will flattern the structure regarding the combined feedback.
-        if (empty($question->options)) {
-            $question->options = new stdClass();
-        }
+        // Handle combined feedback.
+        $question->options = $question->options ?? new stdClass();
         $options = $this->save_combined_feedback_helper($question->options, $question, $question->context, true);
         foreach ((array) $options as $itemname => $value) {
             $question->$itemname = $value;
         }
+
+        // Save question data.
+        $this->save_question_answers($question);
+        $this->save_hints($question);
+        $this->save_documents($question);
         parent::save_question_options($question);
     }
 
-    /**
-     * Save the answers, with any extra data.
-     *
-     * Questions that use answers will call it from {@link save_question_options()}.
-     *
-     * @param object $question This holds the information from the editing form,
-     *      it is not a standard question object.
-     * @return object $result->error or $result->notice
-     */
+    #[\Override]
     public function save_question_answers($question) {
-        global $DB;
+        // Process answersheet data.
+        $jsondata = json_decode($question->jsonquestions, true);
+        $question->extraanswerfields = [];
+        // We need here to build a set of data compatible with the question type API.
+        // The field that is native is the 'answer' field, which is an array of answers.
+        // We add to this the 'extraanswerfields' field, which is an array of additional field values using the same
+        // keys.
 
-        $context = $question->context;
-        $oldanswers = $DB->get_records(
-            'question_answers',
-            ['question' => $question->id],
-            'id ASC'
-        );
-
-        // We need separate arrays for answers and extra answer data, so no JOINS there.
-        $extraanswerfields = $this->extra_answer_fields();
-        $isextraanswerfields = is_array($extraanswerfields);
-        $extraanswertable = '';
-        $oldanswerextras = [];
-        if ($isextraanswerfields) {
-            $extraanswertable = array_shift($extraanswerfields);
-            if (!empty($oldanswers)) {
-                $oldanswerextras = $DB->get_records_sql(
-                    "
-                     SELECT * 
-                     FROM {{$extraanswertable}} 
-                     WHERE answerid IN (
-                        SELECT id FROM {{question_answers}} WHERE question = :questionid
-                        )",
-                    ['questionid' => $question->id]
-                );
-            }
-        }
-
-        // Insert all the new answers.
-        foreach ($question->answer as $key => $answerdata) {
-            // Check for, and ignore, completely blank answer from the form.
-            if ($this->is_answer_empty($question, $key)) {
-                continue;
-            }
-
-            // Update an existing answer if possible.
-            $answer = array_shift($oldanswers);
-            if (!$answer) {
-                $answer = new stdClass();
-                $answer->question = $question->id;
-                $answer->answer = '';
-                $answer->feedback = '';
-                $answer->id = $DB->insert_record('question_answers', $answer);
-            }
-
-            $answer = $this->fill_answer_fields($answer, $question, $key, $context);
-            $DB->update_record('question_answers', $answer);
-            if (!isset($question->answersheetanswer[$key])) {
-                continue;
-            }
-            $answersheetanswerid = $question->answersheetanswer[$key];
-            // Create a new answersheet answer if it does not exist.
-            $answersheetanswer = answersheet_answers::get_record(['id' => $answersheetanswerid]);
-            $answersheetanswer->set('answerid', $answer->id);
-            $answersheetanswer->save();
-
-            if ($isextraanswerfields) {
-                // Check, if this answer contains some extra field data.
-                if ($this->is_extra_answer_fields_empty($question, $key)) {
-                    continue;
-                }
-
-                $answerextra = array_shift($oldanswerextras);
-                if (!$answerextra) {
-                    $answerextra = new stdClass();
-                    $answerextra->answerid = $answer->id;
-                    // Avoid looking for correct default for any possible DB field type
-                    // by setting real values.
-                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
-                    $answerextra->id = $DB->insert_record($extraanswertable, $answerextra);
+        if (!empty($jsondata)) {
+            // First create or update the modules records.
+            foreach ($jsondata as $module) {
+                if (empty($module['id']) || !is_numeric($module['id'])) {
+                    $mod = new answersheet_module();
                 } else {
-                    // Update answerid, as record may be reused from another answer.
-                    $answerextra->answerid = $answer->id;
-                    $answerextra = $this->fill_extra_answer_fields($answerextra, $question, $key, $context, $extraanswerfields);
-                    $DB->update_record($extraanswertable, $answerextra);
+                    $mod = answersheet_module::get_record([
+                        'id' => $module['id']
+                    ]);
+                }
+                $mod->set('name', $module['name']);
+                $mod->set('type', $module['type']);
+                $mod->set('sortorder', $module['sortorder']);
+                $mod->set('questionid', $question->id);
+                $mod->set('numoptions', $module['numoptions']);
+                $mod->save();
+                $moduleid = $mod->get('id');
+                $moduletype = answersheet_module::TYPES[$module['type']];
+
+                foreach ($module['rows'] as $row) {
+                    $answerinfo = array_column($row['cells'], 'value', 'column');
+                    switch ($moduletype) {
+                        case answersheet_module::TYPES[answersheet_module::RADIO_CHECKED]:
+                            $value = $answerinfo['answer'] ?? '';
+                            break;
+                        case answersheet_module::TYPES[answersheet_module::LETTER_BY_LETTER]:
+                            $value = ord($answerinfo['answer']) - 64;
+                            break;
+                        default:
+                            $value = $answerinfo['answer'] ?? '';
+                    }
+
+                    $question->answer[] = $value;
+                    $question->fraction[] = $answerinfo['fraction'] ?? 1;
+                    $question->feedback[] = [
+                        'text' => $answerinfo['feedback'] ?? '',
+                        'format' => FORMAT_PLAIN,
+                    ];
+                    // Add the extra answer field for this module.
+                    $question->extraanswerfields[] = [
+                        'moduleid' => $moduleid,
+                        'sortorder' => $row['sortorder'],
+                        'name' => $answerinfo['name'] ?? '',
+                        'moduletype' => $moduletype,
+                        'numoptions' => $module['numoptions'],
+                        'options' => !empty($answerinfo['options']) ? json_encode($answerinfo['options']) : '',
+                        'answer' => $answerinfo['answer'] ?? '',
+                        'feedback' => $answerinfo['feedback'] ?? '',
+                        'usermodified' => $row['usermodified'] ?? 0,
+                        'timecreated' => $row['timecreated'] ?? 0,
+                        'timemodified' => $row['timemodified'] ?? 0
+                    ];
+                    if (!empty($row['id']) && is_numeric($row['id'])) {
+                        $question->extraanswerfields['id'] = $row['id'];
+                    }
                 }
             }
         }
-
-        if ($isextraanswerfields) {
-            // Delete any left over extra answer fields records.
-            $oldanswerextraids = [];
-            foreach ($oldanswerextras as $oldextra) {
-                $oldanswerextraids[] = $oldextra->id;
-            }
-            $DB->delete_records_list($extraanswertable, 'id', $oldanswerextraids);
-        }
-
-        // Delete any left over old answer records.
-        $fs = get_file_storage();
-        foreach ($oldanswers as $oldanswer) {
-            $fs->delete_area_files($context->id, 'question', 'answerfeedback', $oldanswer->id);
-            $DB->delete_records('question_answers', ['id' => $oldanswer->id]);
+        parent::save_question_answers($question);
+        // Now make sure we save the persistent answers with time and users.
+        $answersheet = answersheet_answers::get_all_records_for_question($question->id);
+        foreach ($answersheet as $answer) {
+            $answer->update();
         }
     }
 
@@ -282,14 +205,10 @@ class qtype_answersheet extends question_type {
         }
     }
 
-    /**
-     * Defines the table which extends the question table. This allows the base questiontype
-     * to automatically save, backup and restore the extra fields.
-     *
-     * @return @array an array with the table name (first) and then the column names (apart from id and questionid)
-     */
-    public function extra_question_fields(): array {
-        return ['qtype_answersheet',
+    #[\Override]
+    public function extra_question_fields() {
+        return [
+            'qtype_answersheet',
             'correctfeedback',
             'correctfeedbackformat',
             'partiallycorrectfeedback',
@@ -299,6 +218,38 @@ class qtype_answersheet extends question_type {
             'shownumcorrect',
             'startnumbering',
         ];
+    }
+
+    #[\Override]
+    public function extra_answer_fields() {
+        return [
+            'qtype_answersheet_answers',
+            'moduleid',
+            'sortorder',
+            'name',
+            'numoptions',
+            'options',
+            'answer',
+            'feedback',
+            'usermodified',
+            'timecreated',
+            'timemodified',
+        ];
+    }
+
+    #[\Override]
+    protected function is_extra_answer_fields_empty($questiondata, $key) {
+        return empty($questiondata->extraanswerfields[$key]);
+    }
+
+    #[\Override]
+    protected function fill_extra_answer_fields($answerextra, $questiondata, $key, $context, $extraanswerfields) {
+        // We override here so we do not add the extraanswerfields in the questiondata directly but rather in the answerextrafields
+        // array.
+        foreach ($extraanswerfields as $field) {
+            $answerextra->$field = $questiondata->extraanswerfields[$key][$field];
+        }
+        return $answerextra;
     }
 
     /**

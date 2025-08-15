@@ -122,4 +122,20 @@ class answersheet_module extends persistent {
     public function get_class(): string {
         return self::TYPES[$this->get('type')];
     }
+
+    /**
+     * Types definition
+     */
+    private const TYPES_TO_RAW = [
+        self::RADIO_CHECKED => PARAM_INT,
+        self::LETTER_BY_LETTER => PARAM_ALPHA,
+        self::FREE_TEXT => PARAM_RAW,
+    ];
+
+    public function get_data_type() {
+        $data = $this->raw_get('type');
+        if (array_key_exists($data, self::TYPES_TO_RAW)) {
+            return self::TYPES_TO_RAW[$data] ?? PARAM_TEXT;
+        }
+    }
 }

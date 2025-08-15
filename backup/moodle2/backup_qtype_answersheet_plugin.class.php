@@ -28,19 +28,6 @@ defined('MOODLE_INTERNAL') || die();
  */
 class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
     /**
-     * Returns one array with filearea => mappingname elements for the qtype
-     *
-     * @return array
-     */
-    public static function get_qtype_fileareas() {
-        $basic = array_fill_keys(utils::get_basic_fileareas(), 'question_created');
-        return array_merge(
-            $basic,
-            ['audio' => 'qtype_answersheet_docs', 'document' => 'qtype_answersheet_docs']
-        );
-    }
-
-    /**
      * Returns the qtype information to attach to question element.
      */
     protected function define_question_plugin_structure() {
@@ -73,33 +60,12 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         );
 
         // Answersheet Answers.
-        $answers = new backup_nested_element('asanswers');
-        $answer = new backup_nested_element(
-            'asanswer',
-            ['id'],
-            [
-                'answerid',
-                'questionid',
-                'moduleid',
-                'sortorder',
-                'name',
-                'numoptions',
-                'options',
-                'answer',
-                'feedback',
-                'usermodified',
-                'timecreated',
-                'timemodified',
-            ]
-        );
-        $pluginwrapper->add_child($answers);
-        $answers->add_child($answer);
-        $answer->set_source_table(
-            "qtype_{$qtypename}_answers",
-            ['questionid' => backup::VAR_PARENTID]
-        );
-        $answer->annotate_ids('question_answers', 'answerid');
-        $answer->annotate_ids('module', 'moduleid');
+        $answers = $pluginwrapper->get_child('answers');
+        $answer = $answers->get_child('answer');
+        $extraanswers = $answer->get_child('extraanswerdata'); // This is the element that will contain the extra answers data.
+        // It is the table/fields of qtype->extra_answer_fields
+        $extraanswers->annotate_ids('module', 'moduleid');
+        $extraanswers->annotate_ids('user', 'usermodified');
 
         // Docs.
         $docs = new backup_nested_element('docs');
@@ -115,5 +81,18 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
             ['questionid' => backup::VAR_PARENTID]
         );
         return $plugin;
+    }
+
+    /**
+     * Returns one array with filearea => mappingname elements for the qtype
+     *
+     * @return array
+     */
+    public static function get_qtype_fileareas() {
+        $basic = array_fill_keys(utils::get_basic_fileareas(), 'question_created');
+        return array_merge(
+            $basic,
+            ['audio' => 'qtype_answersheet_docs', 'document' => 'qtype_answersheet_docs']
+        );
     }
 }

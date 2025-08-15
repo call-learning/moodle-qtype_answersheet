@@ -78,7 +78,7 @@ class get_data extends external_api {
         return new external_single_structure([
             'modules' => new external_multiple_structure(
                 new external_single_structure([
-                    'moduleid' => new external_value(PARAM_INT, 'Id', VALUE_REQUIRED),
+                    'id' => new external_value(PARAM_INT, 'Id', VALUE_REQUIRED),
                     'modulesortorder' => new external_value(PARAM_INT, 'Sort order', VALUE_REQUIRED),
                     'modulename' => new external_value(PARAM_TEXT, 'Name', VALUE_REQUIRED),
                     'numoptions' => new external_value(PARAM_INT, 'Options', VALUE_REQUIRED),

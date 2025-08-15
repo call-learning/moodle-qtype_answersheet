@@ -109,7 +109,7 @@ class answersheet_question implements renderable, templatable {
         $newdata = [];
         foreach ($data as $module) {
             $newmodule = [
-                'moduleid' => $module['moduleid'],
+                'id' => $module['id'],
                 'modulename' => $module['modulename'],
                 'questions' => [],
                 'columns' => $module['columns'],
@@ -133,7 +133,7 @@ class answersheet_question implements renderable, templatable {
                     $newquestion[$cell['column']] = $cell['value'];
                 }
                 if ($module['type'] == answersheet_module::RADIO_CHECKED) {
-                    $newquestion['correctanswer'] = ord($newquestion['options']) - 64;
+                    $newquestion['correctanswer'] = ord($newquestion['answer']) - 64;
                     $newquestion['answers'] = array_map(function ($index) use ($newquestion) {
                         $answer = [
                             'label' => chr(65 + $index),

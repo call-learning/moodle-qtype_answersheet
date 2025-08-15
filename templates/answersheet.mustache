@@ -22,11 +22,11 @@
     Example context (json):
     {
         "questionid": 1,
-        "cssurl": "http://example.com/customfield/sprogramme/styles.css",
+        "cssurl": "http://example.com/customfield/squestion-answere/styles.css",
         "rowname": "Row 1",
         "modules": [
             {
-                "moduleid": 9,
+                "id": 9,
                 "modulename": "Module",
                 "modulesortorder": 0,
                 "rows": [
@@ -379,14 +379,14 @@
         {{> qtype_answersheet/table/modules}}
     </div>
 </div>
-<a href="" class="d-none btn btn-primary" data-action="editprogramme">Edit programme</a>
+<a href="" class="d-none btn btn-primary" data-action="editquestion-answere">Edit question-answere</a>
 <div class="answersheet" data-region="app">
     <div data-region="modules">
     </div>
 </div>
 {{#js}}
 require(['qtype_answersheet/local/manager'], function(manager) {
-    const element = document.querySelector('[data-action="editprogramme"]');
+    const element = document.querySelector('[data-action="editquestion-answere"]');
     manager.init(element, {{questionid}});
 });
 {{/js}}

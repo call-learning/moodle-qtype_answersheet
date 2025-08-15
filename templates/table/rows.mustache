@@ -126,22 +126,22 @@
     <table>
 {{/mustacheonly}}
 {{#rows}}
-    <tr data-row data-index="{{id}}">
+    <tr data-row data-id="{{id}}">
         {{#cells}}
             {{#editor}}
                 {{#visible}}
                     <td data-cell data-columnid="{{columnid}}" class="{{^canedit}}readonly {{/canedit}}{{#float}}float {{/float}}{{#int}}int {{/int}}{{column}}">
                         {{#int}}
-                            <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
+                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
                         {{/int}}
                         {{#float}}
-                            <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
+                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
                         {{/float}}
                         {{#text}}
-                            <input class="programm-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="text" value="{{{value}}}" placeholder="{{{sample_value}}}" />
+                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="text" value="{{{value}}}" placeholder="{{{sample_value}}}" />
                         {{/text}}
                         {{#select}}
-                            <select data-input="auto" {{^canedit}}readonly{{/canedit}} class="programm-input">
+                            <select data-input="auto" {{^canedit}}readonly{{/canedit}} class="question-answer-input">
                                 {{#options}}
                                     <option value="{{{name}}}" {{#selected}}selected{{/selected}}>{{{name}}}</option>
                                 {{/options}}

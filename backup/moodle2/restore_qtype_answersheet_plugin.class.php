@@ -32,13 +32,13 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $paths = parent::define_question_plugin_structure();
         // Add own qtype stuff.
         $elename = 'module';
-        $elepath = $this->get_pathfor('/modules/mod'); // We used get_recommended_name() so this works.
+        $elepath = $this->get_pathfor('/modules/module');
         $paths[] = new restore_path_element($elename, $elepath);
         $elename = 'asanswer';
-        $elepath = $this->get_pathfor('/asanswers/asanswer'); // We used get_recommended_name() so this works.
+        $elepath = $this->get_pathfor('/asanswers/asanswer');
         $paths[] = new restore_path_element($elename, $elepath);
         $elename = 'doc';
-        $elepath = $this->get_pathfor('/docs/doc'); // We used get_recommended_name() so this works.
+        $elepath = $this->get_pathfor('/docs/doc');
         $paths[] = new restore_path_element($elename, $elepath);
         return $paths;
     }
@@ -62,10 +62,32 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $oldid = $data->id;
         $data->questionid = $this->get_new_parentid('question');
         $data->usermodified = $this->get_mappingid('user', $data->usermodified);
-        $newitemid = $DB->insert_record('qtype_answersheet_modules', $data);
-        $this->set_mapping('module', $oldid, $newitemid);
+        $newitemid = $DB->insert_record('qtype_answersheet_module', $data);
+        $this->set_mapping('qtype_answersheet_module', $oldid, $newitemid);
     }
 
+    /**
+     * Processes the extra answer data
+     *
+     * @param array $data extra answer data
+     */
+    public function process_extraanswerdata($data) {
+        global $DB;
+        $data = (object)$data;
+        $extra = $this->qtypeobj->extra_answer_fields();
+        $tablename = array_shift($extra);
+
+        $oldquestionid = $this->get_old_parentid('question');
+        $questioncreated = $this->get_mappingid('question_created', $oldquestionid) ? true : false;
+        $data->moduleid = $this->get_mappingid('module', $data->moduleid);
+        $data->usermodified = $this->get_mappingid('user', $data->usermodified);
+        if ($questioncreated) {
+            $data->answerid = $this->get_mappingid('question_answer', $data->id);
+            $DB->insert_record($tablename, $data);
+        } else {
+            $DB->update_record($tablename, $data);
+        }
+    }
     /**
      * Process the answer element.
      *
@@ -80,7 +102,7 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $data->moduleid = $this->get_mappingid('module', $data->moduleid);
         $data->usermodified = $this->get_mappingid('user', $data->usermodified);
         $newitemid = $DB->insert_record('qtype_answersheet_answers', $data);
-        $this->set_mapping('asanswer', $oldid, $newitemid);
+        $this->set_mapping('qtype_answersheet_answers', $oldid, $newitemid);
     }
 
     /**
@@ -95,6 +117,6 @@ class restore_qtype_answersheet_plugin extends restore_qtype_extrafields_plugin 
         $data->questionid = $this->get_new_parentid('question');
         $data->usermodified = $this->get_mappingid('user', $data->usermodified);
         $newitemid = $DB->insert_record('qtype_answersheet_docs', $data);
-        $this->set_mapping('doc', $oldid, $newitemid);
+        $this->set_mapping('qtype_answersheet_docs', $oldid, $newitemid);
     }
 }

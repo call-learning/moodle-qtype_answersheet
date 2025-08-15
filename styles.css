@@ -46,7 +46,7 @@
     margin-left: 0.5rem;
 }
 
-.answersheet .programm-input {
+.answersheet .question-answer-input {
     display: block;
     width: 100%;
     min-width: 70px;
@@ -63,30 +63,30 @@
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-.answersheet .programm-input::placeholder, .answersheet .programm-input::-webkit-input-placeholder {
+.answersheet .question-answer-input::placeholder, .answersheet .question-answer-input::-webkit-input-placeholder {
     color: #d7d7d8;
 }
 
-.answersheet .programm-input:focus {
+.answersheet .question-answer-input:focus {
     outline: 1px solid #7fb6f1;
     background-color: #f7f7f7;
     border-radius: 0rem;
 }
 
-.answersheet .float .programm-input,
-.answersheet .int .programm-input {
+.answersheet .float .question-answer-input,
+.answersheet .int .question-answer-input {
     min-width: 50px;
     width: 50px;
     max-width: 50px;
 }
 
-.answersheet .programm-table {
+.answersheet .question-answer-table {
     max-width: 100%;
     overflow: visible;
     border-bottom: 1px solid #dee2e6;
 }
 
-.answersheet .programm-table input[type="number"] {
+.answersheet .question-answer-table input[type="number"] {
     /* For most modern browsers */
     -moz-appearance: textfield;
     /* Firefox */
@@ -95,70 +95,70 @@
     appearance: none;
 }
 
-.answersheet .programm-table input[type="number"]::-webkit-inner-spin-button,
-.answersheet .programm-table input[type="number"]::-webkit-outer-spin-button {
+.answersheet .question-answer-table input[type="number"]::-webkit-inner-spin-button,
+.answersheet .question-answer-table input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
     /* Optional: Prevent additional spacing */
 }
 
-.answersheet .programm-table .readonly input,
-.answersheet .programm-table .readonly select {
+.answersheet .question-answer-table .readonly input,
+.answersheet .question-answer-table .readonly select {
     background-color: #f7f7f7;
     border: 0;
 }
 
-.answersheet .programm-table.editor {
+.answersheet .question-answer-table.editor {
     border-left: 1px solid #dee2e6;
 }
 
-.answersheet .programm-table.editor th {
+.answersheet .question-answer-table.editor th {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     padding: 0.4rem;
 }
 
-.answersheet .programm-table.editor th.float, .answersheet .programm-table.editor th.int {
+.answersheet .question-answer-table.editor th.float, .answersheet .question-answer-table.editor th.int {
     background-color: #f7f7f7;
     width: 10px;
 }
 
-.answersheet .programm-table.editor th,
-.answersheet .programm-table.editor td {
+.answersheet .question-answer-table.editor th,
+.answersheet .question-answer-table.editor td {
     border-top: 1px solid #dee2e6;
     border-right: 1px solid #dee2e6;
     position: relative;
 }
 
-.answersheet .programm-table.editor th.actions,
-.answersheet .programm-table.editor td.actions {
+.answersheet .question-answer-table.editor th.actions,
+.answersheet .question-answer-table.editor td.actions {
     display: flex;
 }
 
-.answersheet .programm-table.editor th.int,
-.answersheet .programm-table.editor td.int {
+.answersheet .question-answer-table.editor th.int,
+.answersheet .question-answer-table.editor td.int {
     width: 52px;
     max-width: 52px;
 }
 
-.answersheet .programm-table.editor th.name {
+.answersheet .question-answer-table.editor th.name {
     width: 50px;
 }
 
-.answersheet .programm-table.editor th.answer,
-.answersheet .programm-table.editor th.feedback {
+.answersheet .question-answer-table.editor th.answer,
+.answersheet .question-answer-table.editor th.feedback {
     width: 400px;
     max-width: 400px;
 }
 
-.answersheet .programm-table.standard td,
-.answersheet .programm-table.standard th {
+.answersheet .question-answer-table.standard td,
+.answersheet .question-answer-table.standard th {
     padding: 0.5rem;
     border-top: 1px solid #dee2e6;
 }
 
-.answersheet .programm-table.standard th.float, .answersheet .programm-table.standard th.int {
+.answersheet .question-answer-table.standard th.float, .answersheet .question-answer-table.standard th.int {
     background-color: #f7f7f7;
     width: 50px;
 }
