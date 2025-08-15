@@ -21,6 +21,13 @@
  * @copyright   2021 Laurent David <laurent@call-learning.fr>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+/**
+ * Get the size of an HTML element.
+ * @param {number} elid
+ * @param {string} prop
+ * @return {number}
+ */
 const getHtmlElementSize = (elid, prop) => {
     const el = document.getElementById(elid);
     // Ensure element exists.

@@ -62,23 +62,6 @@ class Repository {
 
         return promise;
     }
-
-    /**
-     * Set the Table data.
-     * @param {Object} args The arguments.
-     * @return {Promise} The promise.
-     */
-    setData(args) {
-        const request = {
-            methodname: 'qtype_answersheet_set_data',
-            args: args
-        };
-
-        let promise = Ajax.call([request])[0]
-            .fail(Notification.exception);
-
-        return promise;
-    }
 }
 
 const RepositoryInstance = new Repository();

@@ -35,20 +35,6 @@ class State {
     }
 
     /**
-     * Set the data.
-     * @param {Object} data The data.
-     * @return {Promise} The promise.
-     */
-    setData(data) {
-        return new Promise((resolve) => {
-            this.data = data;
-            this.notifySubscribers();
-            this.debug();
-            resolve();
-        });
-    }
-
-    /**
      * Set a single value.
      * @param {String} key The key.
      * @param {String} value The value.
