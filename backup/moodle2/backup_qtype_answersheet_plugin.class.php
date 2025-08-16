@@ -35,38 +35,13 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         $pluginwrapper = $plugin->get_child($this->get_recommended_name());
         $qtypeobj = question_bank::get_qtype($this->pluginname);
         $qtypename = $qtypeobj->name();
-
-        // Modules.
-        $modules = new backup_nested_element('modules');
-        $module = new backup_nested_element(
-            'module',
-            ['id'],
-            [
-                'questionid',
-                'sortorder',
-                'name',
-                'type',
-                'numoptions',
-                'usermodified',
-                'timecreated',
-                'timemodified',
-            ]
-        );
-        $pluginwrapper->add_child($modules);
-        $modules->add_child($module);
-        $module->set_source_table(
-            "qtype_{$qtypename}_module",
-            ['questionid' => backup::VAR_PARENTID]
-        );
-
-        // Answersheet Answers.
+        // Answersheet Answers fixup (for annotated elements).
         $answers = $pluginwrapper->get_child('answers');
         $answer = $answers->get_child('answer');
         $extraanswers = $answer->get_child('extraanswerdata'); // This is the element that will contain the extra answers data.
         // It is the table/fields of qtype->extra_answer_fields
         $extraanswers->annotate_ids('module', 'moduleid');
         $extraanswers->annotate_ids('user', 'usermodified');
-
         // Docs.
         $docs = new backup_nested_element('docs');
         $doc = new backup_nested_element(
@@ -83,6 +58,42 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         return $plugin;
     }
 
+
+    /**
+     * Attach to $element (usually questions) the needed backup structures
+     * for question_answers for a given question
+     * Used by various qtypes (calculated, essay, multianswer,
+     * multichoice, numerical, shortanswer, truefalse)
+     * Note: We add the module element before the answers element
+     * to ensure that the backup will not fail if the module is not present.
+     */
+    protected function add_question_question_answers($element) {
+        // Modules: we add it before the answers if not backup fails.
+        $qtypeobj = question_bank::get_qtype($this->pluginname);
+        $qtypename = $qtypeobj->name();
+        $modules = new backup_nested_element('modules');
+        $module = new backup_nested_element(
+            'module',
+            ['id'],
+            [
+                'questionid',
+                'sortorder',
+                'name',
+                'type',
+                'numoptions',
+                'usermodified',
+                'timecreated',
+                'timemodified',
+            ]
+        );
+        $element->add_child($modules);
+        $modules->add_child($module);
+        $module->set_source_table(
+            "qtype_{$qtypename}_module",
+            ['questionid' => backup::VAR_PARENTID]
+        );
+        parent::add_question_question_answers($element);
+    }
     /**
      * Returns one array with filearea => mappingname elements for the qtype
      *
