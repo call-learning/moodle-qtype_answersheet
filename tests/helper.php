@@ -13,6 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+use qtype_answersheet\local\api\answersheet;
+use qtype_answersheet\local\persistent\answersheet_module;
 
 /**
  * Test helper class for the answersheet onto image question type.
@@ -30,11 +32,13 @@ class qtype_answersheet_test_helper extends question_test_helper {
     /**
      * Generate a answersheet question.
      *
+     * This is the basic question data used in tests. It will create a question with some files.
+     *
      * @param string $which
      * @param array $overrides
      * @return array
      */
-    public static function create_question_data($which = 'standard', $overrides = []) {
+    protected static function create_question_data($which = 'standard', $overrides = []) {
         global $CFG;
         $questiondata = self::get_common_question_data();
         // Set the question type.
@@ -143,7 +147,8 @@ class qtype_answersheet_test_helper extends question_test_helper {
      *
      * Make answersheet question standard
      *
-     * This is used by the generator
+     * This is used by the generator so we need to have this available. The type of question is 'standard'.
+     * Note that this will create a real question in the database and it will be used in Behat tests.
      *
      * @return object
      */
@@ -161,11 +166,13 @@ class qtype_answersheet_test_helper extends question_test_helper {
     /**
      * Generate a answersheet question.
      *
+     * This is the basic question data used in tests. It will create a question with some files.
+     *
      * @param string $which
      * @param array $overrides
      * @return array
      */
-    public static function create_question_form_data($which = 'standard', $overrides = []) {
+    protected static function create_question_form_data($which = 'standard', $overrides = []) {
         global $CFG;
         $questiondata = self::get_common_question_data();
         // Add standard feedback.
@@ -288,7 +295,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
 
                 [
                     'sortorder' => 2,
-                    'name' => ' Module 2',
+                    'name' => 'Module 2',
                     'type' => 2,
                     'numoptions' => 4,
                     'rows' =>
@@ -351,7 +358,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
                 ],
                 [
                     'sortorder' => 3,
-                    'name' => ' Module 3',
+                    'name' => 'Module 3',
                     'type' => 3,
                     'numoptions' => 4,
                     'rows' =>
@@ -418,6 +425,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
     /**
      * Create a standard answersheet question without using the question form and persisting data.
      * Called test_question_maker::make_question('answersheet');
+     * This will avoid creating any entry in the database so everything is done in memory.
      *
      * @param array $overrides
      * @return qtype_answersheet_question
@@ -435,27 +443,101 @@ class qtype_answersheet_test_helper extends question_test_helper {
                 $q->{$key} = $value;
             }
         }
-        $answersdata =
-            [
-                1,
-                2,
-                'Answer 1',
-                'Answer 2',
-                'Text 1',
-                'Text 2',
-            ];
-        @$q->answers = []; // This property is not defined in the class, so we initialize it.
-        foreach ($answersdata as $index => $value) {
-            $key = $index + 1; // Answers are 1-indexed.
-            $q->answers[$key] = new question_answer(
-                $key,
-                $value,
-                1,
-                '',
-                FORMAT_PLAIN,
-            );
-        }
+        $q->qtype = question_bank::get_qtype('answersheet');
+        $q->version = 1; // Set a default version for the question.
+        $questioninfo = $this->get_sample_new_question();
+        $q->extraanswerfields = [];
+        $q->extraanswerdatatypes = [];
+        $jsondata = json_decode($questioninfo, true);
+        [$answerdata,$q->extraanswerfields, $q->extraanswerdatatypes, $q->extradatainfo] = $this->generate_extradatainfo($jsondata);
+        @$q->answers = $answerdata;
 
         return $q;
     }
+
+    /**
+     * Génère la structure extradatainfo pour les tests à partir de données simplifiées
+     *
+     * @param array $modules Tableau des modules avec leurs réponses
+     * @return array Structure extradatainfo complète
+     */
+    protected function generate_extradatainfo(array $modules): array {
+        $extradatainfo = [];
+        $baseid = 386000;
+        $baserowid = 384000;
+        $baseanswerid = 403000;
+        $extraanswerfields = [];
+        $extraanswerdatatypes = [];
+        $answerdata = [];
+        foreach ($modules as $index => $module) {
+            $type = $module['type'] ?? 1; // Default to type 1 if not set.
+            $moduledata = [
+                'id' => $baseid + $index,
+                'modulename' => $module['name'],
+                'modulesortorder' => $module['sortorder'] ?? $index,
+                'numoptions' => $module['numoptions'] ?? 4,
+                'type' => $type,
+                'indicator' => '4 (A-D)',
+                'class' => answersheet_module::TYPES[$module['type']] ?? 'text',
+                'rows' => [],
+                'columns' => answersheet::get_table_structure(),
+            ];
+
+            $index = 0;
+            foreach ($module['rows'] as $row) {
+                $newrow = [
+                    'id' => $baserowid,
+                    'sortorder' => $index + 1,
+                    'answerid' => $baseanswerid,
+                    'cells' => [],
+                ];
+                $newcells = [];
+
+                $expectedvalue = '';
+                foreach ($row['cells'] as $cell) {
+                    $newcells[] = [
+                        'column' => $cell['column'],
+                        'type' => $cell['type'],
+                        'value' => $cell['value'] ?? '',
+                        'visible' => true,
+                    ];
+                    if ($cell['column'] === 'answer') {
+                        $expectedvalue = $cell['value'] ?? '';
+                    }
+                }
+                // Initialize answers property.
+                $answerdata[$baseanswerid] = new question_answer(
+                    $baseanswerid,
+                    $expectedvalue,
+                    1,
+                    '',
+                    FORMAT_PLAIN,
+                );
+                $newrow['cells'] = $newcells;
+                $moduledata['rows'][] = $newrow;
+                $extraanswerfields[] = [
+                    'answerid' => $baseanswerid,
+                    'name' => $row['cells'][0]['value'] ?? '-',
+                    'type' => $type,
+                    'options' => json_encode($row['cells'][1]['value'] ?? []),
+                    'value' => $row['cells'][2]['value'] ?? '',
+                ];
+                $extraanswerdatatypes[] = [
+                    'answerid' => $baseanswerid,
+                    'datatype' => answersheet_module::TYPES_TO_RAW_TYPE[$type],
+                    'type' => $type,
+
+                ];
+
+                $baserowid++;
+                $baseanswerid++;
+                $index++;
+            }
+
+            $extradatainfo[] = $moduledata;
+        }
+
+        return [$answerdata, $extraanswerfields, $extraanswerdatatypes, $extradatainfo];
+    }
 }
+

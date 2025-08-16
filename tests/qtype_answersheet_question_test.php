@@ -17,10 +17,8 @@
 namespace qtype_answersheet;
 
 use advanced_testcase;
-use context_module;
 use qtype_answersheet_test_helper;
 use question_attempt_step;
-use question_bank;
 use question_definition;
 use question_state;
 use question_test_helper;
@@ -56,28 +54,36 @@ final class qtype_answersheet_question_test extends advanced_testcase {
     public function test_summarise_response(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
 
-        $response = $this->get_right_responses();
+        $response = $this->get_right_machine_response();
 
         $this->assertEquals(
-            '1 -> 1, 2 -> 2, 3 -> Answer 1, 4 -> Answer 2, 5 -> Text 1, 6 -> Text 2',
+            '1 -> A, 2 -> B, 3 -> Answer 1, 4 -> Answer 2, 5 -> Text 1, 6 -> Text 2',
             $this->dd->summarise_response($response)
         );
     }
 
     /**
-     * Get right responses for the restored question.
-     *
+     * Get right responses that would end up being submitted (integer for choice)
+     * (Radio will be 1, 2, ...)
      * @return array The expected response for the restored question.
      */
-    private function get_right_responses() {
-        return [
-            'answer1' => 1, // Correct
-            'answer2' => 2, // Correct
-            'answer3' => 'Answer 1', // Correct
-            'answer4' => 'Answer 2', // Correct
-            'answer5' => 'Text 1', // Correct
-            'answer6' => 'Text 2', // Correct
-        ];
+    private function get_right_machine_response() {
+        $responsekeys = array_map(function($key) {
+            return 'answer' . $key;
+        }, array_keys($this->dd->answers));
+        $responses = array_map(function($extraanswer) {
+            $value = $extraanswer['value'] ?? '';
+            if (!empty($extraanswer['options'])) {
+                $options = json_decode($extraanswer['options'], true);
+                if(!is_array($options)) {
+                    $options = [];
+                }
+                $options = array_flip($options);
+                return $options[$value] ?? $value;
+            }
+            return $value;
+        }, $this->dd->extraanswerfields);
+        return array_combine($responsekeys, $responses);
     }
 
     /**
@@ -85,12 +91,13 @@ final class qtype_answersheet_question_test extends advanced_testcase {
      */
     public function test_clear_wrong_from_response(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
-        $response = $this->get_right_responses();
-        $response['answer2'] = 1; // Wrong answer.
+        $response = $this->get_right_machine_response();
+        $response[(array_keys($response))[1]] = 1; // Wrong answer.
         // The first 1 is wrong..
+        $rightanwersonly = $this->dd->clear_wrong_from_response($response);
         $this->assertCount(
             5,
-            $this->dd->clear_wrong_from_response($response)
+            $rightanwersonly
         );
     }
 
@@ -99,12 +106,12 @@ final class qtype_answersheet_question_test extends advanced_testcase {
      */
     public function test_get_num_parts_right(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
-        $response = $this->get_right_responses();
-        $response['answer3'] = 'answer 4'; // Wrong answer.
+        $response = $this->get_right_machine_response();
+        $response[(array_keys($response))[2]] = 'answer 4'; // Wrong answer.
 
         $this->assertEquals([5, 6], $this->dd->get_num_parts_right($response));
 
-        $response['answer4'] = 'answer 1'; // Wrong answer.
+        $response[(array_keys($response))[4]] = 'answer 2'; // Wrong answer.
         $this->assertEquals([4, 6], $this->dd->get_num_parts_right($response));
     }
 
@@ -113,9 +120,7 @@ final class qtype_answersheet_question_test extends advanced_testcase {
      */
     public function test_get_expected_data(): void {
         $this->resetAfterTest();
-
-        $question = $this->create_real_question();
-        $question->start_attempt(new question_attempt_step(), 1);
+        $this->dd->start_attempt(new question_attempt_step(), 1);
         $this->assertEquals(
             [
                 'int',
@@ -125,42 +130,20 @@ final class qtype_answersheet_question_test extends advanced_testcase {
                 'raw',
                 'raw',
             ],
-            array_values($question->get_expected_data())
+            array_values($this->dd->get_expected_data())
         );
-    }
-
-    /**
-     * Create a real question for testing.
-     *
-     * This method creates a question of type 'answersheet' in a quiz context.
-     * This sets up all table necessary for the question to be fully functional
-     *
-     * @return question_definition The created question object.
-     */
-    protected function create_real_question() {
-        $coregenerator = $this->getDataGenerator();
-        // Create a course with a quiz that embeds a question.
-        $course = $coregenerator->create_course();
-        $quiz = $coregenerator->create_module('quiz', ['course' => $course->id]);
-        $quizcontext = context_module::instance($quiz->cmid);
-        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $cat = $questiongenerator->create_question_category(['contextid' => $quizcontext->id]);
-        $question = $questiongenerator->create_question('answersheet', 'standard', ['category' => $cat->id]);
-        $question = @question_bank::load_question($question->id);
-        return $question;
     }
 
     /**
      * Test correct response
      */
     public function test_get_correct_response(): void {
-        $question = $this->create_real_question();
-        $question->start_attempt(new question_attempt_step(), 1);
-        $response = $this->get_right_responses();
+        $this->dd->start_attempt(new question_attempt_step(), 1);
+        $response = $this->get_right_machine_response();
         $this->assertEquals(
             array_values($response),
             array_values(
-                $question->get_correct_response()
+                $this->dd->get_correct_response()
             )
         );
     }
@@ -171,7 +154,7 @@ final class qtype_answersheet_question_test extends advanced_testcase {
     public function test_is_same_response(): void {
         $this->dd->start_attempt(new question_attempt_step(), 1);
 
-        $response = $this->get_right_responses();
+        $response = $this->get_right_machine_response();
         $emptyresponse = array_fill_keys(
             array_keys($response),
             ''
@@ -217,7 +200,7 @@ final class qtype_answersheet_question_test extends advanced_testcase {
     public function test_is_complete_response(): void {
         $dd = test_question_maker::make_question('answersheet');
         $dd->start_attempt(new question_attempt_step(), 1);
-        $response = $this->get_right_responses();
+        $response = $this->get_right_machine_response();
         $firstoneempty[1] = '';
         $this->assertFalse($dd->is_complete_response([]));
         $this->assertFalse($dd->is_complete_response($firstoneempty));
@@ -233,7 +216,7 @@ final class qtype_answersheet_question_test extends advanced_testcase {
         $dd = test_question_maker::make_question('answersheet');
         $dd->start_attempt(new question_attempt_step(), 1);
 
-        $fullresponse = $this->get_right_responses();
+        $fullresponse = $this->get_right_machine_response();
         $firstoneempty = array_splice($fullresponse, 1);
         $emptyresponse = array_fill_keys(
             array_keys($fullresponse),
@@ -254,7 +237,7 @@ final class qtype_answersheet_question_test extends advanced_testcase {
     public function test_grading(): void {
         $dd = test_question_maker::make_question('answersheet');
         $dd->start_attempt(new question_attempt_step(), 1);
-        $fullresponse = $this->get_right_responses();
+        $fullresponse = $this->get_right_machine_response();
         $this->assertEquals(
             [1, question_state::$gradedright],
             $dd->grade_response($fullresponse)

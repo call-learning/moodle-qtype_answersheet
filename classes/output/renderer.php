@@ -94,7 +94,7 @@ class renderer extends qtype_with_combined_feedback_renderer {
         foreach ($qa->get_question()->answers as $answerkey => $answerinfo) {
             $answer = $this->get_answer($qa, $answerinfo->id);
 
-            $name = $answer->get('name');
+            $name = $answer['name'];
             $questionname = ($name != '') ? $name : $index;
             $currentresponse = $answerinfo->answer;
 
@@ -117,10 +117,10 @@ class renderer extends qtype_with_combined_feedback_renderer {
      */
     public function get_answer(question_attempt $qa, int $answerid) {
         if (is_null($this->answers)) {
-            $this->answers = answersheet_answers::get_all_records_for_question($qa->get_question()->id);
+            $this->answers = $qa->get_question()->extraanswerfields; // Stored answers in the question
         }
         foreach ($this->answers as $answer) {
-            if ($answer->get('answerid') == $answerid) {
+            if ($answer['answerid'] == $answerid) {
                 return $answer;
             }
         }

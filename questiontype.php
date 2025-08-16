@@ -23,6 +23,7 @@
  */
 
 use qtype_answersheet\answersheet_docs;
+use qtype_answersheet\local\api\answersheet as answersheet_api;
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
 use qtype_answersheet\utils;
@@ -285,11 +286,50 @@ class qtype_answersheet extends question_type {
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
         $this->initialise_question_answers($question, $questiondata, false);
+        $this->initialise_question_extra_info($question, $questiondata);
         $this->initialise_question_hints($question, $questiondata);
         $this->initialise_combined_feedback($question, $questiondata);
         answersheet_docs::add_data($question);
     }
 
+    /**
+     * Initialise question extra answers
+     *
+     * This method loads the extra answer fields from the question data into the question instance.
+     * This is mainly to have a consistent approach with the fact that we might not want to load all the
+     * extra answer fields in the question instance from the dataabase while testing.
+     *
+     * @param question_definition $question
+     * @param object $questiondata
+     */
+    protected function initialise_question_extra_info(question_definition $question, $questiondata) {
+        // We use this as a way to load the extra answer fields from the question data into the
+        $question->extraanswerfields = [];
+        $question->extraanswerdatatypes = [];
+        foreach($question->answers as $answerid => $answer) {
+            $extraanswer = answersheet_answers::get_record([
+                'answerid' => $answerid
+            ]);
+
+            if ($extraanswer) {
+                $answerfieldstokeep = $this->extra_answer_fields();
+                $answerfieldstokeep = array_fill_keys($answerfieldstokeep, 1);
+                $answerfieldstokeep['answerid'] = 1;
+                $answerfieldstokeep['id'] = 1;
+                $question->extraanswerfields[] =
+                    array_intersect_key(
+                        (array) $extraanswer->to_record(),
+                        $answerfieldstokeep
+                    );
+                $question->extraanswerdatatypes[] = [
+                    'answerid' => $answerid,
+                    'datatype' => $extraanswer->get_module_data_type(),
+                    'type' => $extraanswer->get_module_type()
+                ];
+            }
+        }
+        $question->extradatainfo = answersheet_api::get_data($question->id); // Intialise the extra output info for display.
+    }
     /**
      * Delete files
      *

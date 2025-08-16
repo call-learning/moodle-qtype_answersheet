@@ -115,7 +115,7 @@ class answersheet_answers extends persistent {
     }
 
     /**
-     * Get the table name for this persistent class.
+     * Get the module type.
      *
      * @return int
      */
@@ -126,4 +126,18 @@ class answersheet_answers extends persistent {
         }
         return $module->get('type');
     }
+
+    /**
+     * Get the module data type.
+     *
+     * @return string
+     */
+    public function get_module_data_type(): string {
+        $module = answersheet_module::get_record(['id' => $this->get('moduleid')]);
+        if (!$module) {
+            return 'unknown';
+        }
+        return $module->get_data_type();
+    }
+
 }

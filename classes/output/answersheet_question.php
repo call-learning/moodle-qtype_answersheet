@@ -27,9 +27,7 @@ namespace qtype_answersheet\output;
 use moodle_url;
 use qtype_answersheet\answersheet_docs;
 use qtype_answersheet\local\persistent\answersheet_module;
-use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\api\answersheet as answersheet_api;
-use qtype_answersheet\utils;
 use question_attempt;
 use question_display_options;
 use renderable;
@@ -93,7 +91,7 @@ class answersheet_question implements renderable, templatable {
         $data->pdffiles = $this->get_document_info('document');
         // return $data;
         $data->questionid = $question->id;
-        $data->modules = $this->processmodules($question->id);
+        $data->modules = $this->processmodules($question);
         $uniquenumber = uniqid();
         $data->cssurl = new moodle_url('/question/type/answersheet/scss/styles.css', ['v' => $uniquenumber ]);
         return $data;
@@ -101,11 +99,11 @@ class answersheet_question implements renderable, templatable {
 
     /**
      * Process the answersheet modules
-     * @param int $questionid
+     * @param question_definition $question
      * @return array
      */
-    private function processmodules(int $questionid): array {
-        $data = answersheet_api::get_data($questionid);
+    private function processmodules(\question_definition $question): array {
+        $data = $question->extradatainfo;
         $newdata = [];
         foreach ($data as $module) {
             $newmodule = [

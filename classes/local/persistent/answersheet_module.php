@@ -126,7 +126,7 @@ class answersheet_module extends persistent {
     /**
      * Types definition
      */
-    private const TYPES_TO_RAW = [
+    public const TYPES_TO_RAW_TYPE = [
         self::RADIO_CHECKED => PARAM_INT,
         self::LETTER_BY_LETTER => PARAM_ALPHA,
         self::FREE_TEXT => PARAM_RAW,
@@ -134,8 +134,8 @@ class answersheet_module extends persistent {
 
     public function get_data_type() {
         $data = $this->raw_get('type');
-        if (array_key_exists($data, self::TYPES_TO_RAW)) {
-            return self::TYPES_TO_RAW[$data] ?? PARAM_TEXT;
+        if (array_key_exists($data, self::TYPES_TO_RAW_TYPE)) {
+            return self::TYPES_TO_RAW_TYPE[$data] ?? PARAM_TEXT;
         }
     }
 }
