@@ -53,8 +53,11 @@ class answersheet implements renderable, templatable {
     public function export_for_template(renderer_base $output): array {
         global $CFG;
         require_once($CFG->libdir . '/questionlib.php');
-        $question = question_bank::load_question($this->questionid);
-        $modules = answersheet_api::get_data($question);
+        $modules = [];
+        if ($this->questionid > 0) {
+            $question = question_bank::load_question($this->questionid);
+            $modules = answersheet_api::get_data($question);
+        }
         $data = [
             'modules' => $modules,
             'debug' => $CFG->debugdisplay ? json_encode($modules, JSON_PRETTY_PRINT) : '',

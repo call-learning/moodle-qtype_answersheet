@@ -43,12 +43,6 @@ class qtype_answersheet_question extends question_graded_automatically {
     public array $documentname = [];
 
     /**
-     * @var array $extraanswerfields Contains the additional information from qtype_answersheet_answers table, so
-     * it can be used in this class.
-     */
-    public array $extraanswerfields = [];
-
-    /**
      * @var array $modules Contains the modules that are used in this question.
      */
     public array $modules = [];
@@ -92,7 +86,6 @@ class qtype_answersheet_question extends question_graded_automatically {
         return $answersheets;
     }
 
-
     /**
      * Return the answsersheets matching a given answerid.
      */
@@ -108,7 +101,6 @@ class qtype_answersheet_question extends question_graded_automatically {
         return null;
     }
 
-
     /**
      * Get the answer datatypes for this question.
      *
@@ -118,9 +110,18 @@ class qtype_answersheet_question extends question_graded_automatically {
         $datatypes = [];
         foreach ($this->answersheets as $moduleid => $answersheets) {
             foreach ($answersheets as $answersheet) {
+                $module = $this->modules[$moduleid] ?? null;
+                // As we try not to load anything from the database we need to play with what we have in the question.
+                if (!$module) {
+                    $datatype = 'unknown';
+                    $type = 'unknown';
+                } else {
+                    $datatype = $module->get_data_type();
+                    $type = $module->get('type');
+                }
                 $datatypes[$answersheet->get('answerid')] = [
-                    'datatype' => $answersheet->get_module_data_type(),
-                    'type' => $answersheet->get_module_type(),
+                    'datatype' => $datatype,
+                    'type' => $type,
                 ];
             }
         }
@@ -139,7 +140,11 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (!$answersheet) {
                 continue; // If there is no answersheet for this answer, skip it.
             }
-            $response[$this->field($key)] = answersheet::to_stored_value($answer->answer, $answersheet);
+            $response[$this->field($key)] = answersheet::to_stored_value(
+                $answer->answer,
+                $answersheet,
+                $this->modules[$answersheet->get('moduleid')]
+            );
         }
         return $response;
     }
@@ -240,7 +245,11 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (!$answersheet) {
                 continue; // If there is no answersheet for this answer, skip it.
             }
-            $currentresponse = answersheet::to_human_value($currentresponse, $answersheet);
+            $currentresponse = answersheet::to_human_value(
+                $currentresponse,
+                $answersheet,
+                $this->modules[$answersheet->get('moduleid')]
+            );
             $answertypetext = get_string('option', 'qtype_answersheet', $currentresponse);
             $textresponses[] = "{$index} -> $answertypetext";
             $index++;
@@ -306,7 +315,11 @@ class qtype_answersheet_question extends question_graded_automatically {
      */
     public function compare_response_with_answer($currentresponse, question_answer $answerinfo) {
         $answersheet = $this->get_answersheets_from_answerid($answerinfo->id);
-        $normalised = qtype_answersheet\local\api\answersheet::to_human_value($currentresponse, $answersheet);
+        $normalised = answersheet::to_human_value(
+            $currentresponse,
+            $answersheet,
+            $this->modules[$answersheet->get('moduleid')]
+        );
         if ($this->compare_keys($normalised, $answerinfo->answer)) {
             return 1;
         } else {

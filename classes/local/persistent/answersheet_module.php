@@ -128,8 +128,8 @@ class answersheet_module extends persistent {
      */
     public const TYPES_TO_RAW_TYPE = [
         self::RADIO_CHECKED => PARAM_INT,
-        self::LETTER_BY_LETTER => PARAM_ALPHA,
-        self::FREE_TEXT => PARAM_RAW,
+        self::LETTER_BY_LETTER => PARAM_TEXT,
+        self::FREE_TEXT => PARAM_TEXT,
     ];
 
     public function get_data_type() {

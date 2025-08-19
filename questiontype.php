@@ -82,7 +82,7 @@ class qtype_answersheet extends question_type {
     public function save_question_answers($question) {
         // Process answersheet data.
         $jsondata = json_decode($question->jsonquestions, true);
-        $question->extraanswerfields = [];
+        $question->options->extraanswerfields = [];
         // We need here to build a set of data compatible with the question type API.
         // The field that is native is the 'answer' field, which is an array of answers.
         // We add to this the 'extraanswerfields' field, which is an array of additional field values using the same
@@ -106,7 +106,6 @@ class qtype_answersheet extends question_type {
                 $mod->save();
                 $moduleid = $mod->get('id');
                 $moduletype = answersheet_module::TYPES[$module['type']];
-
                 foreach ($module['rows'] as $row) {
                     $answerinfo = array_column($row['cells'], 'value', 'column');
                     switch ($moduletype) {
@@ -119,7 +118,6 @@ class qtype_answersheet extends question_type {
                         default:
                             $value = $answerinfo['answer'] ?? '';
                     }
-
                     $question->answer[] = $value;
                     $question->fraction[] = $answerinfo['fraction'] ?? 1;
                     $question->feedback[] = [
@@ -127,7 +125,7 @@ class qtype_answersheet extends question_type {
                         'format' => FORMAT_PLAIN,
                     ];
                     // Add the extra answer field for this module.
-                    $question->extraanswerfields[] = [
+                    $question->options->extraanswerfields[] = [
                         'moduleid' => $moduleid,
                         'sortorder' => $row['sortorder'],
                         'name' => $answerinfo['name'] ?? '',
@@ -141,7 +139,7 @@ class qtype_answersheet extends question_type {
                         'timemodified' => $row['timemodified'] ?? 0,
                     ];
                     if (!empty($row['id']) && is_numeric($row['id'])) {
-                        $question->extraanswerfields['id'] = $row['id'];
+                        $question->options->extraanswerfields['id'] = $row['id'];
                     }
                 }
             }
@@ -239,7 +237,7 @@ class qtype_answersheet extends question_type {
 
     #[\Override]
     protected function is_extra_answer_fields_empty($questiondata, $key) {
-        return empty($questiondata->extraanswerfields[$key]);
+        return empty($questiondata->options->extraanswerfields[$key]);
     }
 
     #[\Override]
@@ -247,7 +245,7 @@ class qtype_answersheet extends question_type {
         // We override here so we do not add the extraanswerfields in the questiondata directly but rather in the answerextrafields
         // array.
         foreach ($extraanswerfields as $field) {
-            $answerextra->$field = $questiondata->extraanswerfields[$key][$field];
+            $answerextra->$field = $questiondata->options->extraanswerfields[$key][$field];
         }
         return $answerextra;
     }

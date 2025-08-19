@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 use qtype_answersheet\local\api\answersheet;
+use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
 
 /**
@@ -446,10 +447,10 @@ class qtype_answersheet_test_helper extends question_test_helper {
         $q->qtype = question_bank::get_qtype('answersheet');
         $q->version = 1; // Set a default version for the question.
         $questioninfo = $this->get_sample_new_question();
-        $q->extraanswerfields = [];
-        $q->extraanswerdatatypes = [];
+        $q->modules = [];
+        $q->answersheets = [];
         $jsondata = json_decode($questioninfo, true);
-        [$answerdata,$q->extraanswerfields, $q->extraanswerdatatypes, $q->extradatainfo] = $this->generate_extradatainfo($jsondata);
+        [$answerdata,$q->modules, $q->answersheets] = $this->fill_question_data($jsondata);
         @$q->answers = $answerdata;
 
         return $q;
@@ -458,86 +459,99 @@ class qtype_answersheet_test_helper extends question_test_helper {
     /**
      * Génère la structure extradatainfo pour les tests à partir de données simplifiées
      *
-     * @param array $modules Tableau des modules avec leurs réponses
+     * @param array $modulesdefinition Tableau des modules avec leurs réponses
      * @return array Structure extradatainfo complète
      */
-    protected function generate_extradatainfo(array $modules): array {
-        $extradatainfo = [];
-        $baseid = 386000;
-        $baserowid = 384000;
-        $baseanswerid = 403000;
-        $extraanswerfields = [];
-        $extraanswerdatatypes = [];
+    protected function fill_question_data(array $modulesdefinition): array {
+        $moduleid = 403000;
+        $answersheetid = 400000;
+        $answerid = 500000;
+        $modules = [];
+        $answersheets = [];
         $answerdata = [];
-        foreach ($modules as $index => $module) {
-            $type = $module['type'] ?? 1; // Default to type 1 if not set.
-            $moduledata = [
-                'id' => $baseid + $index,
-                'modulename' => $module['name'],
-                'modulesortorder' => $module['sortorder'] ?? $index,
-                'numoptions' => $module['numoptions'] ?? 4,
+        foreach ($modulesdefinition as $index => $moduledef) {
+            $type = $moduledef['type'] ?? answersheet_module::RADIO_CHECKED; // Default to type 1 if not set.
+            $newmodule =  new answersheet_module(0);
+            $newmodule->from_record((object)[
+                'id' => $moduleid,
+                'sortorder' => $moduledef['sortorder'] ?? 0,
+                'name' => $moduledef['name'] ?? 'Module ' . ($index + 1),
+                'numoptions' => $moduledef['numoptions'] ?? 4,
                 'type' => $type,
-                'indicator' => '4 (A-D)',
-                'class' => answersheet_module::TYPES[$module['type']] ?? 'text',
-                'rows' => [],
-                'columns' => answersheet::get_table_structure(),
-            ];
-
-            $index = 0;
-            foreach ($module['rows'] as $row) {
-                $newrow = [
-                    'id' => $baserowid,
-                    'sortorder' => $index + 1,
-                    'answerid' => $baseanswerid,
-                    'cells' => [],
-                ];
-                $newcells = [];
-
+            ]);
+            $modules[$moduleid] = $newmodule;
+            foreach ($moduledef['rows'] as $row) {
+                $newanswersheet = new answersheet_answers(0);
+                $newanswersheet = $newanswersheet->from_record((object)[
+                    'id' => $answersheetid,
+                    'answerid' => $answerid,
+                    'moduleid' => $moduleid,
+                    'name' => $row['cells'][0]['value'] ?? '-',
+                    'options' => json_encode($row['cells'][1]['value'] ?? []),
+                    'value' => $row['cells'][2]['value'] ?? '',
+                ]);
                 $expectedvalue = '';
                 foreach ($row['cells'] as $cell) {
-                    $newcells[] = [
-                        'column' => $cell['column'],
-                        'type' => $cell['type'],
-                        'value' => $cell['value'] ?? '',
-                        'visible' => true,
-                    ];
                     if ($cell['column'] === 'answer') {
                         $expectedvalue = $cell['value'] ?? '';
                     }
                 }
                 // Initialize answers property.
-                $answerdata[$baseanswerid] = new question_answer(
-                    $baseanswerid,
+                $answerdata[$answerid] = new question_answer(
+                    $answerid,
                     $expectedvalue,
                     1,
                     '',
                     FORMAT_PLAIN,
                 );
-                $newrow['cells'] = $newcells;
-                $moduledata['rows'][] = $newrow;
-                $extraanswerfields[] = [
-                    'answerid' => $baseanswerid,
-                    'name' => $row['cells'][0]['value'] ?? '-',
-                    'type' => $type,
-                    'options' => json_encode($row['cells'][1]['value'] ?? []),
-                    'value' => $row['cells'][2]['value'] ?? '',
-                ];
-                $extraanswerdatatypes[] = [
-                    'answerid' => $baseanswerid,
-                    'datatype' => answersheet_module::TYPES_TO_RAW_TYPE[$type],
-                    'type' => $type,
+                $answersheets[$moduleid][] = $newanswersheet;
 
-                ];
-
-                $baserowid++;
-                $baseanswerid++;
-                $index++;
+                $answerid++;
+                $answersheetid++;
             }
-
-            $extradatainfo[] = $moduledata;
+            $moduleid++;
         }
 
-        return [$answerdata, $extraanswerfields, $extraanswerdatatypes, $extradatainfo];
+        return [$answerdata, $modules, $answersheets];
+    }
+
+
+    /**
+     * Get right responses that would end up being submitted (integer for choice)
+     * (Radio will be 1, 2, ...)
+     * @return array The expected response for the restored question.
+     */
+    public function get_right_machine_response(question_definition $question): array {
+        $responsekeys = array_map(function($key) {
+            return 'answer' . $key;
+        }, array_keys($question->answers));
+        return array_combine($responsekeys, [
+            1, // Radio 1.
+            2, // Radio 2.
+            'Answer 1',
+            'Answer 2',
+            'Text 1',
+            'Text 2',
+        ]);
+    }
+
+    /**
+     * Get right responses that would end up being submitted (integer for choice)
+     * (Radio will be 1, 2, ...)
+     * @return array The expected response for the restored question.
+     */
+    public function get_full_wrong_machine_response(question_definition $question): array {
+        $responsekeys = array_map(function($key) {
+            return 'answer' . $key;
+        }, array_keys($question->answers));
+        return array_combine($responsekeys, [
+            2, // Radio 1.
+            1, // Radio 2.
+            'Answer 3',
+            'Answer 4',
+            'Text 5',
+            'Text 6',
+        ]);
     }
 }
 

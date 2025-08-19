@@ -31,11 +31,13 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
     /**
      * @var qtype_answersheet_test_helper
      */
-    protected question_test_helper $testhelper;
+    protected question_test_helper $helper;
+
     /**
      * @var question_definition $dd
      */
     protected question_definition $dd;
+
     /**
      * Setup the test environment.
      */
@@ -44,22 +46,12 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         parent::setUp();
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $this->markTestSkipped(); // For now, we skip this test as it is not fully implemented.
         require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
         require_once($CFG->dirroot . '/question/type/answersheet/tests/helper.php');
-        // Ensure the question type is loaded.
-        $this->testhelper = test_question_maker::get_test_helper('answersheet');
-        $coregenerator = $this->getDataGenerator();
-        // Create a course with a quiz that embeds a question.
-        $course = $coregenerator->create_course();
-        $quiz = $coregenerator->create_module('quiz', ['course' => $course->id]);
-        $quizcontext = context_module::instance($quiz->cmid);
-        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $cat = $questiongenerator->create_question_category(['contextid' => $quizcontext->id]);
-        $question = $questiongenerator->create_question('answersheet', 'standard', ['category' => $cat->id]);
-        //$this->dd = @question_bank::load_question($question->id);
+        $this->helper = test_question_maker::get_test_helper('answersheet');
         $this->dd = test_question_maker::make_question('answersheet');
     }
+
     /**
      * Test the question type name.
      */
@@ -87,7 +79,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Save the wrong answer.
-        $fullwrong = array_combine(array_keys($this->dd->answers), [2, 1, 'Answer 3', 'Answer 4', 'Text 5', 'Text 5']);
+        $fullwrong = $this->helper->get_full_wrong_machine_response($this->dd);
 
         $this->process_submission($fullwrong);
         // Verify.
@@ -147,14 +139,14 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Submit the right answer.
-        $fullright = qtype_answersheet_test_helper::create_full_right_response($this->dd);
+        $fullright = $this->helper->get_right_machine_response($this->dd);
         $this->process_submission(
             array_merge($fullright, ['-submit' => 1])
         );
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(5); // Penalty of 50%, 1 tries done, see adjust_fraction.
+        $this->check_current_mark(6.666667); // Penalty of 50%, 1 tries done, see adjust_fraction.
         $this->check_current_output(
             $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
             $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
@@ -171,7 +163,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(5);
+        $this->check_current_mark(6.666667);
     }
 
     /**
@@ -270,7 +262,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Save a partial answer.
-        $fullright = $this->get_right_machine_response();
+        $fullright = $this->helper->get_right_machine_response($this->dd);
         $partialanswer = array_slice($fullright, 0, 3);
         $this->process_submission($partialanswer);
         // Verify.
@@ -327,7 +319,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedpartial);
-        $this->check_current_mark(9);
+        $this->check_current_mark(8.3333333333333);
     }
 
     /**
@@ -355,7 +347,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_step_count(1);
 
         // Save a blank response.
-        $fullright = $this->get_right_machine_response();
+        $fullright = $this->helper->get_right_machine_response($this->dd);
         $fullblank = array_map(function($value) {
             return '';
         }, $fullright);
@@ -413,7 +405,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Save a partial answer.
-        $fullright = $this->get_right_machine_response();
+        $fullright = $this->helper->get_right_machine_response($this->dd);
         $partialanswer = array_slice($fullright, 0, 3);
         $this->process_submission($partialanswer);
 
@@ -479,8 +471,8 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Submit an response with the first two parts right.
-        $fullright = $this->get_right_machine_response();
-        $fullwrong = $this->get_right_machine_response();
+        $fullright = $this->helper->get_right_machine_response($this->dd);
+        $fullwrong = $this->helper->get_right_machine_response($this->dd);
         $fullwrong = array_map(function($value) {
             return 'Z';
         }, $fullwrong);
@@ -703,7 +695,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Save the a partially right answer.
-        $fullright = $this->get_right_machine_response();
+        $fullright = $this->helper->get_right_machine_response($this->dd);
         $fullwrong = array_map(function($value) {
             return 'Z';
         }, $fullright);
@@ -779,7 +771,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Do try again.
-        $fullempty = $this->get_right_machine_response();
+        $fullempty = $this->helper->get_right_machine_response($this->dd);
         $fullempty = array_map(function($value) {
                 return '';
         }, $fullempty);

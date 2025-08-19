@@ -122,7 +122,7 @@ class answersheet_answers extends persistent {
     public function get_module_type(): int {
         $module = answersheet_module::get_record(['id' => $this->get('moduleid')]);
         if (!$module) {
-            return 'unknown';
+            return 0;
         }
         return $module->get('type');
     }
