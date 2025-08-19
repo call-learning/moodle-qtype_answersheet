@@ -72,7 +72,7 @@ class answersheet_test extends advanced_testcase {
         $cat = $questiongenerator->create_question_category(['contextid' => $quizcontext->id]);
         $question = $questiongenerator->create_question('answersheet', 'standard', ['category' => $cat->id]);
 
-        $data = answersheet::get_data($question->id);
+        $data = answersheet::get_data($question);
 
         $this->assertIsArray($data);
         $this->assertNotEmpty($data);

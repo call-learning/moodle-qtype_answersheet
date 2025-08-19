@@ -103,7 +103,9 @@ class answersheet_question implements renderable, templatable {
      * @return array
      */
     private function processmodules(\question_definition $question): array {
-        $data = $question->extradatainfo;
+        $data = answersheet_api::get_data($question);
+        // This will not query the database, but will return the data from the question itself (this is better this way
+        // for test purpose).
         $newdata = [];
         foreach ($data as $module) {
             $newmodule = [

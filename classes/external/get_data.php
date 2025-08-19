@@ -26,6 +26,7 @@ use external_single_structure;
 use external_multiple_structure;
 
 use qtype_answersheet\local\api\answersheet;
+use question_bank;
 
 /**
  * Class get_data
@@ -54,6 +55,7 @@ class get_data extends external_api {
      * @throws \invalid_parameter_exception
      */
     public static function execute(int $questionid): array {
+        global $CFG;
         $params = self::validate_parameters(
             self::execute_parameters(),
             [
@@ -62,8 +64,13 @@ class get_data extends external_api {
         );
         $questionid = $params['questionid'];
 
+        require_once($CFG->libdir . '/questionlib.php');
+        // Load the question using the question bank, this avoids loading the question data type directly and use
+        // the question bank API to load the question and its modules.
+        $question = question_bank::load_question($questionid);
+
         $data = [
-            'modules' => answersheet::get_data($questionid),
+            'modules' => answersheet::get_data($question),
         ];
 
         return $data;

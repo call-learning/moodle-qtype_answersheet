@@ -16,6 +16,7 @@
 
 namespace qtype_answersheet\output;
 use qtype_answersheet\local\api\answersheet as answersheet_api;
+use question_bank;
 use renderable;
 use templatable;
 use renderer_base;
@@ -51,7 +52,9 @@ class answersheet implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output): array {
         global $CFG;
-        $modules = answersheet_api::get_data($this->questionid);
+        require_once($CFG->libdir . '/questionlib.php');
+        $question = question_bank::load_question($this->questionid);
+        $modules = answersheet_api::get_data($question);
         $data = [
             'modules' => $modules,
             'debug' => $CFG->debugdisplay ? json_encode($modules, JSON_PRETTY_PRINT) : '',

@@ -91,10 +91,11 @@ class renderer extends qtype_with_combined_feedback_renderer {
     protected function correct_response(question_attempt $qa) {
         $textresponses = [];
         $index = 1;
-        foreach ($qa->get_question()->answers as $answerkey => $answerinfo) {
+        $question = $qa->get_question();
+        foreach ($question->answers as $answerkey => $answerinfo) {
             $answer = $this->get_answer($qa, $answerinfo->id);
-
-            $name = $answer['name'];
+            $answersheet = $question->get_answersheets_from_answerid($answer->id);
+            $name = $answersheet->get('name');
             $questionname = ($name != '') ? $name : $index;
             $currentresponse = $answerinfo->answer;
 
@@ -117,10 +118,10 @@ class renderer extends qtype_with_combined_feedback_renderer {
      */
     public function get_answer(question_attempt $qa, int $answerid) {
         if (is_null($this->answers)) {
-            $this->answers = $qa->get_question()->extraanswerfields; // Stored answers in the question
+            $this->answers = $qa->get_question()->answers; // Stored answers in the question
         }
         foreach ($this->answers as $answer) {
-            if ($answer['answerid'] == $answerid) {
+            if ($answer->id == $answerid) {
                 return $answer;
             }
         }

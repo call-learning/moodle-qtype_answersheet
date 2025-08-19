@@ -18,6 +18,8 @@
 // /question/type/questionbase.php.
 //
 // Make sure to implement all the abstract methods of the base class.
+use qtype_answersheet\local\api\answersheet;
+use qtype_answersheet\local\persistent\answersheet_answers;
 
 /**
  * Question definition class for answersheet.
@@ -47,14 +49,15 @@ class qtype_answersheet_question extends question_graded_automatically {
     public array $extraanswerfields = [];
 
     /**
-     * @var array $answers Contains the answers for this question. Preloaded from the database.
+     * @var array $modules Contains the modules that are used in this question.
      */
-    public array $extraanswerdatatypes = [];
+    public array $modules = [];
 
     /**
-     * @var array $answers Contains extra info to compute the output of the question.
+     * @var array $answersheets Contain all answersheets keyed by their module id.
      */
-    public array $extradatainfo = [];
+    public array $answersheets = [];
+
     /**
      * Returns data to be included in the form submission.
      *
@@ -62,31 +65,68 @@ class qtype_answersheet_question extends question_graded_automatically {
      */
     public function get_expected_data() {
         $data = [];
-        $extraanswerfieldswithkeys = $this->get_array_indexed_by_answerid($this->extraanswerfields);
-        $extraanswerdatatypeswithkeys = $this->get_array_indexed_by_answerid($this->extraanswerdatatypes);
+        $answersheets = $this->get_answersheets_by_answerid();
+        $datatypes = $this->get_answer_datatypes();
         foreach (array_keys($this->answers) as $key) {
-            if (!isset($extraanswerfieldswithkeys[$key]) || !isset($extraanswerdatatypeswithkeys[$key])) {
+            if (!isset($answersheets[$key]) || !isset($datatypes[$key])) {
                 continue;
             }
-            $data['answer' . $key] = $extraanswerdatatypeswithkeys[$key]['datatype'];
+            $data['answer' . $key] = $datatypes[$key]['datatype'];
         }
         return $data;
     }
 
     /**
-     * Returns the data that would need to be submitted to get a correct answer.
+     * Return the answsersheets answers indexed by their answerid.
      *
-     * This is mostly because we cannot always garantee that the index in the extraanswerfields and
-     * extraanswerdatatypes is answerid based, so we need to index them by answerid.
      * @return array|null Null if it is not possible to compute a correct response.
      */
-    private function get_array_indexed_by_answerid(array $array): array {
-        // Index answers by their answerid (this is not necessary the case).
-        return array_combine(
-            array_column($array, 'answerid'),
-            $array
-        );
+    private function get_answersheets_by_answerid(): array {
+        $answersheets = [];
+        foreach ($this->answersheets as $moduleid => $answers) {
+            foreach ($answers as $answer) {
+                // Load the answersheets for each answer.
+                $answersheets[$answer->get('answerid')] = $answer;
+            }
+        }
+        return $answersheets;
     }
+
+
+    /**
+     * Return the answsersheets matching a given answerid.
+     */
+    public function get_answersheets_from_answerid(int $answerid): ?answersheet_answers {
+        foreach ($this->answersheets as $moduleid => $answers) {
+            foreach ($answers as $answer) {
+                if ($answer->get('answerid') == $answerid) {
+                    // Load the answersheets for each answer.
+                    return $answer;
+                }
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * Get the answer datatypes for this question.
+     *
+     * @return array
+     */
+    private function get_answer_datatypes(): array {
+        $datatypes = [];
+        foreach ($this->answersheets as $moduleid => $answersheets) {
+            foreach ($answersheets as $answersheet) {
+                $datatypes[$answersheet->get('answerid')] = [
+                    'datatype' => $answersheet->get_module_data_type(),
+                    'type' => $answersheet->get_module_type(),
+                ];
+            }
+        }
+        return $datatypes;
+    }
+
     /**
      * Returns the data that would need to be submitted to get a correct answer.
      *
@@ -95,7 +135,11 @@ class qtype_answersheet_question extends question_graded_automatically {
     public function get_correct_response() {
         $response = [];
         foreach ($this->answers as $key => $answer) {
-            $response[$this->field($key)] = $this->normalise_answer($answer->answer, $answer);
+            $answersheet = $this->get_answersheets_from_answerid($answer->id);
+            if (!$answersheet) {
+                continue; // If there is no answersheet for this answer, skip it.
+            }
+            $response[$this->field($key)] = answersheet::to_stored_value($answer->answer, $answersheet);
         }
         return $response;
     }
@@ -192,7 +236,11 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $currentresponse = $this->denormalise_answer($currentresponse, $answerinfo);
+            $answersheet = $this->get_answersheets_from_answerid($answerinfo->id);
+            if (!$answersheet) {
+                continue; // If there is no answersheet for this answer, skip it.
+            }
+            $currentresponse = answersheet::to_human_value($currentresponse, $answersheet);
             $answertypetext = get_string('option', 'qtype_answersheet', $currentresponse);
             $textresponses[] = "{$index} -> $answertypetext";
             $index++;
@@ -231,6 +279,7 @@ class qtype_answersheet_question extends question_graded_automatically {
 
     /**
      * Grade response
+     *
      * @param array $responses
      * @return array
      */
@@ -246,6 +295,41 @@ class qtype_answersheet_question extends question_graded_automatically {
         }
         $fraction = $totalscore / count($this->answers);
         return [$fraction, question_state::graded_state_for_fraction($fraction)];
+    }
+
+    /**
+     * Check if the response is correct
+     *
+     * @param array $currentresponse
+     * @param question_answer $answerinfo
+     * @return int 1 if correct, 0 if not
+     */
+    public function compare_response_with_answer($currentresponse, question_answer $answerinfo) {
+        $answersheet = $this->get_answersheets_from_answerid($answerinfo->id);
+        $normalised = qtype_answersheet\local\api\answersheet::to_human_value($currentresponse, $answersheet);
+        if ($this->compare_keys($normalised, $answerinfo->answer)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Compare two keys in a case-insensitive manner and without accents if possible.
+     *
+     * @param string $key1
+     * @param string $key2
+     * @return bool
+     */
+    private function compare_keys(string $key1, string $key2) {
+        // Compare keys in a case-insensitive manner.
+        // We use trim to remove any leading or trailing whitespace.
+        // Can you compare without accents ?
+        if (function_exists('iconv')) {
+            $key1 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key1);
+            $key2 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key2);
+        }
+        return strcasecmp(trim($key1), trim($key2)) === 0;
     }
 
     /**
@@ -315,99 +399,5 @@ class qtype_answersheet_question extends question_graded_automatically {
             }
         }
         return $totalscore / count($this->answers);
-    }
-
-    /**
-     * Check if the response is correct
-     * @param array $currentresponse
-     * @param question_answer $answerinfo
-     * @return int 1 if correct, 0 if not
-     */
-    public function compare_response_with_answer($currentresponse, question_answer $answerinfo) {
-        $normalised = $this->denormalise_answer($currentresponse, $answerinfo);
-        if ($this->compare_keys($normalised, $answerinfo->answer)) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * Compare two keys in a case-insensitive manner and without accents if possible.
-     * @param string $key1
-     * @param string $key2
-     * @return bool
-     */
-    private function compare_keys(string $key1, string $key2) {
-        // Compare keys in a case-insensitive manner.
-        // We use trim to remove any leading or trailing whitespace.
-        // Can you compare without accents ?
-        if (function_exists('iconv')) {
-            $key1 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key1);
-            $key2 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key2);
-        }
-        return strcasecmp(trim($key1), trim($key2)) === 0;
-    }
-
-    /**
-     * Normalize the answer
-     *
-     * @param mixed $answervalue The string to normalize.
-     * @param question_answer $answerinfo The answer information object.
-     */
-    private function normalise_answer(mixed $answervalue, question_answer $answerinfo): mixed {
-        $datatypes = $this->get_array_indexed_by_answerid($this->extraanswerdatatypes);
-        $extrananswerinfo = $this->get_array_indexed_by_answerid($this->extraanswerfields);
-        $type = $datatypes[$answerinfo->id]['type'] ?? 0;
-        switch ($type) {
-            case \qtype_answersheet\local\persistent\answersheet_module::RADIO_CHECKED:
-                // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
-                $options = $extrananswerinfo[$answerinfo->id]['options'] ?? null;
-                if ($options) {
-                    $options = json_decode($options, true);
-                    $options = array_flip($options);
-                    if (isset($options[$answervalue])) {
-                        $answervalue = $options[$answervalue];
-                        return intval($answervalue);
-                    }
-                    return 0; // If the answer is not in the options, return 0.
-                }
-                break;
-            case \qtype_answersheet\local\persistent\answersheet_module::FREE_TEXT:
-            case \qtype_answersheet\local\persistent\answersheet_module::LETTER_BY_LETTER:
-            default:
-                return trim($answervalue);
-        }
-        return $answervalue; // Return the original value if no specific normalization is needed.
-    }
-
-    /**
-     * Denormalise the answer
-     *
-     * @param mixed $answervalue The string to normalize.
-     * @param question_answer $answerinfo The answer information object.
-     */
-    private function denormalise_answer(mixed $answervalue, question_answer $answerinfo): mixed {
-        $datatypes = $this->get_array_indexed_by_answerid($this->extraanswerdatatypes);
-        $extrananswerinfo = $this->get_array_indexed_by_answerid($this->extraanswerfields);
-        $type = $datatypes[$answerinfo->id]['type'] ?? 0;
-        switch ($type) {
-            case \qtype_answersheet\local\persistent\answersheet_module::RADIO_CHECKED:
-                // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
-                $options = $extrananswerinfo[$answerinfo->id]['options'] ?? null;
-                if ($options) {
-                    $options = json_decode($options, true);
-                    if (isset($options[$answervalue])) {
-                        return $options[$answervalue];
-                    }
-                    return ''; // If the answer is not in the options, return ''.
-                }
-                break;
-            case \qtype_answersheet\local\persistent\answersheet_module::FREE_TEXT:
-            case \qtype_answersheet\local\persistent\answersheet_module::LETTER_BY_LETTER:
-            default:
-                return trim($answervalue);
-        }
-        return $answervalue; // Return the original value if no specific normalization is needed.
     }
 }

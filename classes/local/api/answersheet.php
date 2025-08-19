@@ -18,7 +18,7 @@ namespace qtype_answersheet\local\api;
 
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
-use stdClass;
+use question_definition;
 
 /**
  * Class programme
@@ -29,7 +29,67 @@ use stdClass;
  */
 class answersheet {
     /**
+     * Get the data for a given question definition.
+     *
+     * It is important to note that this function does not take a question id, but a question object so like this
+     * it can be used in the question bank API to load the question and its modules (and for test purposes we can
+     * provide a question object directly).
+     *
+     * @param \question_definition $question The question object to get the data for.
+     *
+     * @return array $data
+     */
+    public static function get_data(question_definition $question): array {
+        $columns = self::get_column_structure();
+        $data = [];
+        foreach ($question->modules ?? [] as $module) {
+            $records = $question->answersheets[$module->get('id')] ?? [];
+            $modulerows = [];
+            foreach ($records as $record) {
+                $row = [];
+                foreach ($columns as $column) {
+                    $row[] = [
+                        'column' => $column['column'],
+                        'value' => $record->get($column['column']),
+                        'type' => $column['type'],
+                        'visible' => $column['visible'],
+                    ];
+                }
+                $modulerows[] = [
+                    'id' => $record->get('id'),
+                    'sortorder' => $record->get('sortorder'),
+                    'cells' => $row,
+                    'answerid' => $record->get('answerid'),
+                ];
+            }
+            $data[] = [
+                'id' => $module->get('id'),
+                'modulename' => $module->get('name'),
+                'modulesortorder' => $module->get('sortorder'),
+                'numoptions' => $module->get('numoptions'),
+                'type' => $module->get('type'),
+                'class' => $module->get_class(),
+                'indicator' => $module->get_indicator(),
+                'rows' => $modulerows,
+                'columns' => $columns,
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get the column structure for the custom field
+     *
+     * @return array $columns
+     */
+    public static function get_column_structure(): array {
+        $table = self::get_table_structure();
+        return array_values($table);
+    }
+
+    /**
      * Get the table structure for the custom field
+     *
      * @return array $table
      */
     public static function get_table_structure(): array {
@@ -133,55 +193,99 @@ class answersheet {
     }
 
     /**
-     * Get the column structure for the custom field
-     * @return array $columns
+     * Populate the question data with answersheet data
+     *
+     * @param \question_definition $question The question object to populate.
      */
-    public static function get_column_structure(): array {
-        $table = self::get_table_structure();
-        return array_values($table);
+    public static function add_data(\question_definition $question): void {
+        // Using the extra_answer_fields extension is making sure that the question->options->answers contains the answersheet data.
+        // Except that we don't have the answersheet element id.)
+        $question->modules = answersheet_module::get_all_records_for_question($question->id);
+        $question->answersheets = [];
+        foreach ($question->modules as $module) {
+            $question->answersheets[$module->get('id')] = answersheet_answers::get_all_records_for_module($module->get('id'));
+        }
+        //$question->extraanswerfields = [];
+        //$question->extraanswerdatatypes = [];
+        //foreach($question->answers as $answerid => $answer) {
+        //    $extraanswer = answersheet_answers::get_record([
+        //        'answerid' => $answerid
+        //    ]);
+        //
+        //    if ($extraanswer) {
+        //        $answerfieldstokeep = $this->extra_answer_fields();
+        //        $answerfieldstokeep = array_fill_keys($answerfieldstokeep, 1);
+        //        $answerfieldstokeep['answerid'] = 1;
+        //        $answerfieldstokeep['id'] = 1;
+        //        $question->extraanswerfields[] =
+        //            array_intersect_key(
+        //                (array) $extraanswer->to_record(),
+        //                $answerfieldstokeep
+        //            );
+        //        $question->extraanswerdatatypes[] = [
+        //            'answerid' => $answerid,
+        //            'datatype' => $extraanswer->get_module_data_type(),
+        //            'type' => $extraanswer->get_module_type()
+        //        ];
+        //    }
+        //}
+        //        $question->extradatainfo = answersheet_api::get_data($question->id); // Intialise the extra output info for display.
+        //        $question->answersheet = new stdClass();
+        //        $question->answersheet->modules = self::get_data($question->id);
+        //        $question->answersheet->columns = self::get_column_structure();
+        //        $question->answersheet->table = self::get_table_structure();
     }
 
     /**
-     * Get the data for a given course
-     * @param int $questionid
-     * @return array $data
+     * Normalise the answer value so we can store it in the database.
+     *
+     * @param mixed $value The value to normalise.
+     * @param answersheet_answers $answersheet The answersheet answers object.
+     * @return mixed The returned value once it has been normalised.
      */
-    public static function get_data(int $questionid): array {
-        $modules = answersheet_module::get_all_records_for_question($questionid);
-        $columns = self::get_column_structure();
-        $data = [];
-        foreach ($modules as $module) {
-            $records = answersheet_answers::get_all_records_for_module($module->get('id'));
-            $modulerows = [];
-            foreach ($records as $record) {
-                $row = [];
-                foreach ($columns as $column) {
-                    $row[] = [
-                        'column' => $column['column'],
-                        'value' => $record->get($column['column']),
-                        'type' => $column['type'],
-                        'visible' => $column['visible'],
-                    ];
+    public static function to_stored_value(mixed $value, answersheet_answers $answersheet): mixed {
+        switch ($answersheet->get_module_type()) {
+            case answersheet_module::RADIO_CHECKED:
+                // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
+                $options = $answersheet->get('options'); // TODO: add a way to get the options as array via persistent.
+                $options = json_decode($options, true);
+                $options = array_flip($options);
+                if (isset($options[$value])) {
+                    $answervalue = $options[$value];
+                    return intval($answervalue);
                 }
-                $modulerows[] = [
-                    'id' => $record->get('id'),
-                    'sortorder' => $record->get('sortorder'),
-                    'cells' => $row,
-                    'answerid' => $record->get('answerid'),
-                ];
-            }
-            $data[] = [
-                'id' => $module->get('id'),
-                'modulename' => $module->get('name'),
-                'modulesortorder' => $module->get('sortorder'),
-                'numoptions' => $module->get('numoptions'),
-                'type' => $module->get('type'),
-                'class' => $module->get_class(),
-                'indicator' => $module->get_indicator(),
-                'rows' => $modulerows,
-                'columns' => $columns,
-            ];
+                return 0; // If the answer is not in the options, return 0.
+            case answersheet_module::FREE_TEXT:
+            case answersheet_module::LETTER_BY_LETTER:
+            default:
+                return trim($value);
         }
-        return $data;
+    }
+
+    /**
+     * Denormalise the answer so it can be displayed in the question.
+     *
+     * @param mixed $value The value to normalise.
+     * @param answersheet_answers $answersheet The answersheet answers object.
+     * @return string The returned value once it has been denormalised.
+     */
+    public static function to_human_value(mixed $value, answersheet_answers $answersheet): string {
+        switch ($answersheet->get_module_type()) {
+            case answersheet_module::RADIO_CHECKED:
+                // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
+                $options = $answersheet->get('options');
+                if ($options) {
+                    $options = json_decode($options, true);
+                    if (isset($options[$value])) {
+                        return $value;
+                    }
+                }
+                return ''; // If the answer is not in the options, return ''.
+                break;
+            case answersheet_module::FREE_TEXT:
+            case answersheet_module::LETTER_BY_LETTER:
+            default:
+                return trim($value);
+        }
     }
 }
