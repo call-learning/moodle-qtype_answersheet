@@ -46,5 +46,5 @@ Feature: Test editing a Answersheet question
     And I press "Save preview options and start again"
     And I click on "//input[@id='radio_checked_question_0_0_1']" "xpath"
     And I press "Submit and finish"
-    And I should see "You have correctly selected 1"
+    And I should see "That is not right at all"
     And I should see "The correct answer is: 1 -> B, 2 -> B, 1 -> Answer 1, 2 -> Answer 2, 1 -> Text 1, 2 -> Text 2"

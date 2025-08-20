@@ -65,7 +65,7 @@ Feature: Preview a Answersheet question
     And I set the field with xpath "//input[@id='freetext_question_2_0']" to "Text 1"
     And I set the field with xpath "//input[@id='freetext_question_2_1']" to "Text 2"
     And I press "Submit and finish"
-    Then I should see "Your answer is partially correct."
+    Then I should see "You have correctly selected 3."
     And I should see "The correct answer is: 1 -> A, 2 -> B, 1 -> Answer 1, 2 -> Answer 2, 1 -> Text 1, 2 -> Text 2"
 
   @javascript @_switch_window
@@ -79,5 +79,5 @@ Feature: Preview a Answersheet question
     And I click on "//input[@id='radio_checked_question_0_0_2']" "xpath"
     And I set the field with xpath "//input[@id='freetext_question_2_0']" to "Text 3"
     And I press "Submit and finish"
-    Then I should see "Your answer is partially correct."
+    Then I should see "That is not right at all"
     And I should see "The correct answer is: 1 -> A, 2 -> B, 1 -> Answer 1, 2 -> Answer 2, 1 -> Text 1, 2 -> Text 2"
