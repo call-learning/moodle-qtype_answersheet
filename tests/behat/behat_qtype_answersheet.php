@@ -29,5 +29,4 @@ require_once(__DIR__ . '/../../../../../lib/behat/behat_base.php');
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  **/
 class behat_qtype_answersheet extends behat_base {
-
 }

@@ -113,33 +113,4 @@ class answersheet_answers extends persistent {
     public static function get_all_records_for_module(int $moduleid): array {
         return self::get_records(['moduleid' => $moduleid], 'sortorder');
     }
-
-    /**
-     * Get the module type.
-     *
-     * @return int
-     */
-    public function get_module_type(): int {
-        $module = answersheet_module::get_record(['id' => $this->get('moduleid')]);
-        if (!$module) {
-            return 0;
-        }
-        return $module->get('type');
-    }
-
-    /**
-     * Get the module data type.
-     *
-     * @return string
-     */
-    public function get_module_data_type(): string {
-        $module = answersheet_module::get_record(['id' => $this->get('moduleid')]);
-        if (!$module) {
-            return 'unknown';
-        }
-        return $module->get_data_type();
-    }
-
-
-
 }

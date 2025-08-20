@@ -85,7 +85,6 @@ final class backup_test extends \advanced_testcase {
                  WHERE qtype = ?",
             ['answersheet']
         );
-        /* @var question_definition $answersheetdata */
         $questiontocheck = question_bank::load_question_data($newmatchid);
 
         $this->verify_restored_question($questiontocheck);
@@ -156,7 +155,7 @@ final class backup_test extends \advanced_testcase {
 
         // Get restored question.
         $restoredquestion = $DB->get_record_sql(
-            "SELECT q.* FROM {question} q 
+            "SELECT q.* FROM {question} q
              JOIN {question_versions} qv ON q.id = qv.questionid
              JOIN {question_bank_entries} qbe ON qv.questionbankentryid = qbe.id
              JOIN {question_categories} qc ON qbe.questioncategoryid = qc.id

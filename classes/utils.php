@@ -15,7 +15,6 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace qtype_answersheet;
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * The editing form for answersheet question type is defined here.

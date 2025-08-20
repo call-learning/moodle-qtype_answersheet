@@ -18,8 +18,6 @@ namespace qtype_answersheet;
 
 use core\persistent;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * The answersheet attached documents
  *

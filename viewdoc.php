@@ -21,10 +21,7 @@
  * @copyright  2025 Bas Brands <bas@sonsbeekmedia.nl>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 require('../../../config.php');
-
-
 
 $cmid = required_param('cmid', PARAM_INT);
 $docid = required_param('docid', PARAM_INT);
@@ -43,6 +40,17 @@ $PAGE->set_context($context);
 $PAGE->set_pagelayout('popup');
 $PAGE->add_body_class('answersheet-embed');
 
+/**
+ * Get the URL of the first document file in the answersheet.
+ *
+ * @param $files
+ * @param $qubaid
+ * @param $slot
+ * @return string|void
+ * @copyright  2025 Bas Brands <bas@sonsbeekmedia.nl>
+ * @package    qtype_answersheet
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 function get_docfile_url($files, $qubaid, $slot) {
     if ($files) {
         foreach ($files as $file) {

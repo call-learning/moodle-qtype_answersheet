@@ -265,7 +265,7 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
 
         // Save a blank response.
         $fullright = $this->helper->get_right_machine_response($this->dd);
-        $fullblank = array_map(function($value) {
+        $fullblank = array_map(function ($value) {
             return '';
         }, $fullright);
         $this->process_submission($fullblank);
@@ -301,7 +301,7 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
-        $this->start_attempt_at_question($this->dd, 'deferredfeedback',6);
+        $this->start_attempt_at_question($this->dd, 'deferredfeedback', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
@@ -402,7 +402,7 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
             $fullblankkeys,
             '',
         );
-        $fullblank = array_map(function($value) {
+        $fullblank = array_map(function ($value) {
             return '';
         }, $fullblank);
 
@@ -638,7 +638,7 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
 
         // Do try again.
         $fullempty = $this->helper->get_right_machine_response($this->dd);
-        $fullempty = array_map(function($value) {
+        $fullempty = array_map(function ($value) {
             return '';
         }, $fullempty);
         $this->process_submission($fullempty + ['-tryagain' => 1]);
@@ -769,7 +769,7 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
      */
     private function get_all_input_expectation(array $currentanswer = []): array {
         $answerkeys = $this->helper->get_answer_keys($this->dd);
-        $currentanswers = array_map(function($key) use ($currentanswer) {
+        $currentanswers = array_map(function ($key) use ($currentanswer) {
             return $currentanswer[$key] ?? null;
         }, $answerkeys);
         $currentanswer = array_values($currentanswers); // We can index from 0;
@@ -800,7 +800,5 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
             $this->get_contains_input_answer_text_expectation($this->dd, 4, currentanswer: $currentanswer[4]),
             $this->get_contains_input_answer_text_expectation($this->dd, 5, currentanswer: $currentanswer[5]),
         ];
-
     }
-
 }

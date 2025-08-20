@@ -35,7 +35,7 @@ class answersheet {
      * it can be used in the question bank API to load the question and its modules (and for test purposes we can
      * provide a question object directly).
      *
-     * @param \question_definition $question The question object to get the data for.
+     * @param question_definition $question The question object to get the data for.
      *
      * @return array $data
      */
@@ -218,6 +218,7 @@ class answersheet {
      * @param answersheet_answers $answersheet The answersheet answers object.
      * @param answersheet_module|null $module The answersheet module object. We provide it as when testing we don't have the
      * answersheet module in the database, so we can provide a mock object.
+     *
      * @return mixed The returned value once it has been normalised.
      * @throws \coding_exception
      */
@@ -225,7 +226,7 @@ class answersheet {
         switch ($module->get('type')) {
             case answersheet_module::RADIO_CHECKED:
                 // For radio checked, we store the answer as an integer, so we need to find the order of the answer.
-                $options = $answersheet->get('options'); // TODO: add a way to get the options as array via persistent.
+                $options = $answersheet->get('options');
                 $options = json_decode($options, true);
                 $options = array_flip($options);
                 if (isset($options[$value])) {

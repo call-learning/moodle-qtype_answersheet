@@ -30,8 +30,6 @@ use question_attempt;
 use question_display_options;
 use qtype_answersheet\local\persistent\answersheet_answers;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Generates the output for answersheet questions.
  *
@@ -118,7 +116,7 @@ class renderer extends qtype_with_combined_feedback_renderer {
      */
     public function get_answer(question_attempt $qa, int $answerid) {
         if (is_null($this->answers)) {
-            $this->answers = $qa->get_question()->answers; // Stored answers in the question
+            $this->answers = $qa->get_question()->answers; // Stored answers in the question.
         }
         foreach ($this->answers as $answer) {
             if ($answer->id == $answerid) {

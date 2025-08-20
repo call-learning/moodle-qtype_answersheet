@@ -132,6 +132,11 @@ class answersheet_module extends persistent {
         self::FREE_TEXT => PARAM_TEXT,
     ];
 
+    /**
+     * Get the data type for this module.
+     *
+     * @return int|null
+     */
     public function get_data_type() {
         $data = $this->raw_get('type');
         if (array_key_exists($data, self::TYPES_TO_RAW_TYPE)) {

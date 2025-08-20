@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-use qtype_answersheet\local\api\answersheet;
+
 use qtype_answersheet\local\persistent\answersheet_answers;
 use qtype_answersheet\local\persistent\answersheet_module;
 
@@ -28,7 +28,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
     /**
      * Question text
      */
-    const QUESTION_TEXT = 'THIS IS AN ANSWERSHEET QUESTION.';
+    const QUESTION_TEXT = 'THIS IS AN ANSWERSHEET QUESTION';
 
     /**
      * Generate a answersheet question.
@@ -145,7 +145,8 @@ class qtype_answersheet_test_helper extends question_test_helper {
      * @return object
      */
     public function get_answersheet_question_form_data_standard() {
-        $form = self::create_question_form_data('standard');;
+        $form = self::create_question_form_data('standard');
+        ;
         $form->name = 'Test answersheet';
         test_question_maker::set_standard_combined_feedback_form_data($form);
         $form->qtype = question_bank::get_qtype('answersheet');
@@ -437,7 +438,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
         $q->modules = [];
         $q->answersheets = [];
         $jsondata = json_decode($questioninfo, true);
-        [$answerdata,$q->modules, $q->answersheets] = $this->fill_question_data($jsondata);
+        [$answerdata, $q->modules, $q->answersheets] = $this->fill_question_data($jsondata);
         @$q->answers = $answerdata;
 
         return $q;
@@ -458,7 +459,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
         $answerdata = [];
         foreach ($modulesdefinition as $index => $moduledef) {
             $type = $moduledef['type'] ?? answersheet_module::RADIO_CHECKED; // Default to type 1 if not set.
-            $newmodule =  new answersheet_module(0);
+            $newmodule = new answersheet_module(0);
             $newmodule->from_record((object)[
                 'id' => $moduleid,
                 'sortorder' => $moduledef['sortorder'] ?? 0,
@@ -537,11 +538,18 @@ class qtype_answersheet_test_helper extends question_test_helper {
         ]);
     }
 
+    /**
+     * Get the answer keys for the question.
+     *
+     * This method returns an array of answer keys for the given question definition.
+     *
+     * @param question_definition $question The question definition object.
+     * @return array An array of answer keys.
+     */
     public function get_answer_keys(question_definition $question): array {
         // Get the answer keys for the question.
-        return array_map(function($key) {
+        return array_map(function ($key) {
             return 'answer' . $key;
         }, array_keys($question->answers));
     }
 }
-

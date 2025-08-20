@@ -16,8 +16,6 @@
 
 use qtype_answersheet\utils;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Provides the information to backup answersheet questions
  *
@@ -39,7 +37,7 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
         $answers = $pluginwrapper->get_child('answers');
         $answer = $answers->get_child('answer');
         $extraanswers = $answer->get_child('extraanswerdata'); // This is the element that will contain the extra answers data.
-        // It is the table/fields of qtype->extra_answer_fields
+        // It is the table/fields of qtype->extra_answer_fields.
         $extraanswers->annotate_ids('module', 'moduleid');
         $extraanswers->annotate_ids('user', 'usermodified');
         // Docs.

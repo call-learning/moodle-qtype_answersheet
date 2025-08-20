@@ -35,8 +35,6 @@ use renderer_base;
 use stdClass;
 use templatable;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Generates the output for answersheet questions.
  *
@@ -89,7 +87,6 @@ class answersheet_question implements renderable, templatable {
         $data->questiontext = $question->questiontext;
         $data->audiofiles = $this->get_document_info('audio');
         $data->pdffiles = $this->get_document_info('document');
-        // return $data;
         $data->questionid = $question->id;
         $data->modules = $this->processmodules($question);
         $uniquenumber = uniqid();
