@@ -28,7 +28,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
     /**
      * Question text
      */
-    const QUESTION_TEXT = 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG.';
+    const QUESTION_TEXT = 'THIS IS AN ANSWERSHEET QUESTION.';
 
     /**
      * Generate a answersheet question.
@@ -78,28 +78,19 @@ class qtype_answersheet_test_helper extends question_test_helper {
     public static function get_common_question_data($which = 'standard', $overrides = []) {
         $questiondata = [
             'name' => 'Test question',
-            'questiontext' => '<strong>The quick brown fox jumped over the lazy dog.</strong>',
+            'questiontext' => '<strong>This is an Answersheet question</strong>',
             'questiontextformat' => FORMAT_HTML,
-            'defaultmark' => 1.0,
+            'defaultmark' => 1,
             'idnumber' => '',
             'startnumbering' => 2,
             'shownumcorrect' => true,
             'penalty' => 0.3333333,
-            'qtype' => 'answersheet',
-            'makecopy' => 0,
             'updatebutton' => 'Save changes and continue editing',
             'modulename' => 'mod_quiz',
             'audioitem' => 1,
             'documentitem' => 1,
             'audioname' => ['Test audio file'],
             'documentname' => ['Test document file'],
-            'correctfeedback' => '<p>Your answer is correct.</p>',
-            'correctfeedbackformat' => FORMAT_HTML,
-            'partiallycorrectfeedback' => '<p>Your answer is partially correct.</p>',
-            'partiallycorrectfeedbackformat' => FORMAT_HTML,
-            'incorrectfeedback' => '<p>Your answer is incorrect.</p>',
-            'incorrectfeedbackformat' => FORMAT_HTML,
-            'parent' => 0,
             'generalfeedback' => '<p>General feedback for the question.</p>',
             'generalfeedbackformat' => FORMAT_HTML,
 
@@ -154,9 +145,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
      * @return object
      */
     public function get_answersheet_question_form_data_standard() {
-        $questiondata = self::create_question_form_data('standard');
-
-        $form = (object) $questiondata;
+        $form = self::create_question_form_data('standard');;
         $form->name = 'Test answersheet';
         test_question_maker::set_standard_combined_feedback_form_data($form);
         $form->qtype = question_bank::get_qtype('answersheet');
@@ -175,47 +164,43 @@ class qtype_answersheet_test_helper extends question_test_helper {
      */
     protected static function create_question_form_data($which = 'standard', $overrides = []) {
         global $CFG;
-        $questiondata = self::get_common_question_data();
+        $questiondata = (object) self::get_common_question_data();
         // Add standard feedback.
-        $questiondata['correctfeedback'] = [
-            'text' => $questiondata['correctfeedback'],
-            'format' => FORMAT_HTML,
+        test_question_maker::set_standard_combined_feedback_form_data($questiondata);
+        $questiondata->questiontext = [
+            'text' => $questiondata->questiontext,
+            'format' => $questiondata->questiontextformat,
         ];
-        $questiondata['partiallycorrectfeedback'] = [
-            'text' => $questiondata['partiallycorrectfeedback'],
-            'format' => FORMAT_HTML,
+        $questiondata->generalfeedback = [
+            'text' => $questiondata->generalfeedback,
+            'format' => $questiondata->generalfeedbackformat,
         ];
-        $questiondata['incorrectfeedback'] = [
-            'text' => $questiondata['incorrectfeedback'],
-            'format' => FORMAT_HTML,
-        ];
-
         // Add hints.
-        $questiondata['numhints'] = 2;
-        $questiondata['hint'] = [
+        $questiondata->numhints = 2;
+        $questiondata->hint = [
             ['text' => '', 'format' => FORMAT_HTML],
             ['text' => '', 'format' => FORMAT_HTML],
         ];
-        $questiondata['hintclearwrong'] = [0, 0];
-        $questiondata['hintshownumcorrect'] = [0, 0];
+        $questiondata->hintclearwrong = [0, 0];
+        $questiondata->hintshownumcorrect = [0, 0];
 
         // Create fixture files if they exist.
         if (file_exists($CFG->dirroot . '/question/type/answersheet/tests/fixtures/bensound-littleplanet.mp3')) {
-            $questiondata['audio'] = [
+            $questiondata->audio = [
                 self::create_fixture_draft_file(
                     $CFG->dirroot . '/question/type/answersheet/tests/fixtures/bensound-littleplanet.mp3'
                 ),
             ];
-            $questiondata['audioname'] = ['Test audio file'];
+            $questiondata->audioname = ['Test audio file'];
         }
 
         if (file_exists($CFG->dirroot . '/question/type/answersheet/tests/fixtures/document.pdf')) {
-            $questiondata['document'] = [
+            $questiondata->document = [
                 self::create_fixture_draft_file(
                     $CFG->dirroot . '/question/type/answersheet/tests/fixtures/document.pdf'
                 ),
             ];
-            $questiondata['documentname'] = ['Test document file'];
+            $questiondata->documentname = ['Test document file'];
         }
 
         return $questiondata;
@@ -225,6 +210,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
      * Get sample new question data for answersheet.
      * This is a JSON string representing a new answersheet question with two modules.
      *
+     * The question contains 2 radio buttons, 2 letter by letter inputs, and 2 text inputs.
      * @return string
      */
     protected function get_sample_new_question() {
@@ -432,9 +418,10 @@ class qtype_answersheet_test_helper extends question_test_helper {
      * @return qtype_answersheet_question
      */
     public function make_answersheet_question_standard($overrides = []) {
-        // Here we create a sample question without using the question form.
         question_bank::load_question_definition_classes('answersheet');
         $q = new qtype_answersheet_question();
+        test_question_maker::initialise_a_question($q);
+        test_question_maker::set_standard_combined_feedback_fields($q);
         // Merge this with actual question data.
         $questiondata = self::get_common_question_data('standard', $overrides);
         $questiondata = (object) $questiondata;
@@ -522,9 +509,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
      * @return array The expected response for the restored question.
      */
     public function get_right_machine_response(question_definition $question): array {
-        $responsekeys = array_map(function($key) {
-            return 'answer' . $key;
-        }, array_keys($question->answers));
+        $responsekeys = $this->get_answer_keys($question);
         return array_combine($responsekeys, [
             1, // Radio 1.
             2, // Radio 2.
@@ -541,9 +526,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
      * @return array The expected response for the restored question.
      */
     public function get_full_wrong_machine_response(question_definition $question): array {
-        $responsekeys = array_map(function($key) {
-            return 'answer' . $key;
-        }, array_keys($question->answers));
+        $responsekeys = $this->get_answer_keys($question);
         return array_combine($responsekeys, [
             2, // Radio 1.
             1, // Radio 2.
@@ -552,6 +535,13 @@ class qtype_answersheet_test_helper extends question_test_helper {
             'Text 5',
             'Text 6',
         ]);
+    }
+
+    public function get_answer_keys(question_definition $question): array {
+        // Get the answer keys for the question.
+        return array_map(function($key) {
+            return 'answer' . $key;
+        }, array_keys($question->answers));
     }
 }
 

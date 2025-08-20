@@ -13,10 +13,10 @@ Feature: Test duplicating a quiz containing a Answersheet question
       | Course       | C1        | Test questions |
     And the following "questions" exist:
       | questioncategory | qtype       | name            | template |
-      | Test questions   | answersheet | answersheet-001 | frogtoad |
+      | Test questions   | answersheet | answersheet-001 | standard |
     And the following "activities" exist:
-      | activity   | name      | course | idnumber |
-      | quiz       | Test quiz | C1     | quiz1    |
+      | activity | name      | course | idnumber |
+      | quiz     | Test quiz | C1     | quiz1    |
     And quiz "Test quiz" contains the following questions:
       | answersheet-001 | 1 |
     And the following config values are set as admin:
@@ -33,17 +33,14 @@ Feature: Test duplicating a quiz containing a Answersheet question
     And I am on the "Course 2" "core_question > course question bank" page
     And I choose "Edit question" action for "answersheet-001" in the question bank
     Then the following fields match these values:
-      | Question name        | answersheet-001                                   |
-      | Question text        | Name an amphibian: __________                     |
-      | General feedback     | Generalfeedback: frog or toad would have been OK. |
-      | Default mark         | 1                                                 |
-      | Case sensitivity     | No, case is unimportant                           |
-      | id_answer_0          | frog                                              |
-      | id_fraction_0        | 100%                                              |
-      | id_feedback_0        | Frog is a very good answer.                       |
-      | id_answer_1          | toad                                              |
-      | id_fraction_1        | 80%                                               |
-      | id_feedback_1        | Toad is an OK good answer.                        |
-      | id_answer_2          | *                                                 |
-      | id_fraction_2        | None                                              |
-      | id_feedback_2        | That is a bad answer.                             |
+      | Question name    | answersheet-001                                         |
+      | Question text    | <p><strong>This is an Answersheet question</strong></p> |
+      | General feedback | General feedback for the question.                      |
+      | Default mark     | 1                                                       |
+      | Start numbering  | 2                                                       |
+      | id_answer_0_0    | A                                                       |
+      | id_answer_0_1    | B                                                       |
+      | id_answer_1_0    | Answer 1                                                |
+      | id_answer_1_1    | Answer 2                                                |
+      | id_answer_2_0    | Text 1                                                  |
+      | id_answer_2_1    | Text 2                                                  |

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_answersheet\local\api\answersheet;
+namespace qtype_answersheet\local\api;
 
 use advanced_testcase;
 use context_module;
@@ -28,13 +28,13 @@ use qtype_answersheet\local\persistent\answersheet_module;
  * @package     qtype_answersheet
  * @copyright   2021 Laurent David <laurent@call-learning.fr>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \qtype_answersheet\local\api\answersheet
+ * @covers \qtype_answersheet\local\api\answersheet
  */
-class answersheet_test extends advanced_testcase {
+final class answersheet_test extends advanced_testcase {
     /**
      * Test table structure for the answersheet API.
      */
-    public function test_get_table_structure() {
+    public function test_get_table_structure(): void {
         $columns = answersheet::get_table_structure();
 
         $this->assertIsArray($columns);
@@ -46,7 +46,7 @@ class answersheet_test extends advanced_testcase {
     /**
      * Test column structure for the answersheet API.
      */
-    public function test_get_column_structure() {
+    public function test_get_column_structure(): void {
         $columns = answersheet::get_column_structure();
 
         $this->assertIsArray($columns);
@@ -58,7 +58,7 @@ class answersheet_test extends advanced_testcase {
     /**
      * Test the get_data method of the answersheet API.
      */
-    public function test_get_data() {
+    public function test_get_data(): void {
         $this->resetAfterTest();
 
         $this->setAdminUser();
@@ -72,12 +72,13 @@ class answersheet_test extends advanced_testcase {
         $cat = $questiongenerator->create_question_category(['contextid' => $quizcontext->id]);
         $question = $questiongenerator->create_question('answersheet', 'standard', ['category' => $cat->id]);
 
+        $question = \question_bank::load_question($question->id);
         $data = answersheet::get_data($question);
 
         $this->assertIsArray($data);
         $this->assertNotEmpty($data);
         $this->assertCount(3, $data);
         $this->assertEquals(['Module 1', 'Module 2', 'Module 3'], array_column($data, 'modulename'));
-        $this->assertEquals([1,2,3], array_column($data, 'type'));
+        $this->assertEquals([1, 2, 3], array_column($data, 'type'));
     }
 }

@@ -19,46 +19,65 @@ Feature: Preview a Answersheet question
       | Course       | C1        | Test questions |
     And the following "questions" exist:
       | questioncategory | qtype       | name            | template |
-      | Test questions   | answersheet | answersheet-001 | frogtoad |
+      | Test questions   | answersheet | answersheet-001 | standard |
 
   @javascript @_switch_window
   Scenario: Preview a Answersheet question with correct answer
     When I am on the "answersheet-001" "core_question > preview" page logged in as teacher
-    And I should see "Name an amphibian:"
+    And I should see "This is an Answersheet question"
     # Set behaviour options
     And I set the following fields to these values:
       | behaviour | immediatefeedback |
     And I press "Save preview options and start again"
-    And I set the field with xpath "//div[@class='qtext']//input[contains(@id, '1_answer')]" to "frog"
-    And I press "Check"
-    Then I should see "Frog is a very good answer."
-    And I should see "Generalfeedback: frog or toad would have been OK."
-    And I should see "The correct answer is: frog"
+    And I click on "//input[@id='radio_checked_question_0_0_1']" "xpath"
+    And I click on "//input[@id='radio_checked_question_0_1_2']" "xpath"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_1']" to "A"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_2']" to "N"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_3']" to "S"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_4']" to "W"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_1']" to "A"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_2']" to "N"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_3']" to "S"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_4']" to "W"
+    And I set the field with xpath "//input[@id='freetext_question_2_0']" to "Text 1"
+    And I set the field with xpath "//input[@id='freetext_question_2_1']" to "Text 2"
+    And I press "Submit and finish"
+    Then I should see "Your answer is correct."
+    And I should see "The correct answer is: 1 -> A, 2 -> B, 1 -> Answer 1, 2 -> Answer 2, 1 -> Text 1, 2 -> Text 2"
 
   @javascript @_switch_window
   Scenario: Preview a Answersheet question with almost correct answer
     When I am on the "answersheet-001" "core_question > preview" page logged in as teacher
-    And I should see "Name an amphibian:"
+    And I should see "This is an Answersheet question"
     # Set behaviour options
     And I set the following fields to these values:
       | behaviour | immediatefeedback |
     And I press "Save preview options and start again"
-    And I set the field with xpath "//div[@class='qtext']//input[contains(@id, '1_answer')]" to "toad"
-    And I press "Check"
-    Then I should see "Toad is an OK good answer."
-    And I should see "Generalfeedback: frog or toad would have been OK."
-    And I should see "The correct answer is: frog"
+    And I click on "//input[@id='radio_checked_question_0_0_1']" "xpath"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_1']" to "A"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_2']" to "N"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_3']" to "S"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_0_4']" to "W"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_1']" to "A"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_2']" to "N"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_3']" to "S"
+    And I set the field with xpath "//input[@id='letter_by_letter_question_1_1_4']" to "W"
+    And I set the field with xpath "//input[@id='freetext_question_2_0']" to "Text 1"
+    And I set the field with xpath "//input[@id='freetext_question_2_1']" to "Text 2"
+    And I press "Submit and finish"
+    Then I should see "Your answer is partially correct."
+    And I should see "The correct answer is: 1 -> A, 2 -> B, 1 -> Answer 1, 2 -> Answer 2, 1 -> Text 1, 2 -> Text 2"
 
   @javascript @_switch_window
   Scenario: Preview a Answersheet question with incorrect answer
     When I am on the "answersheet-001" "core_question > preview" page logged in as teacher
-    And I should see "Name an amphibian:"
+    And I should see "This is an Answersheet question"
     # Set behaviour options
     And I set the following fields to these values:
       | behaviour | immediatefeedback |
     And I press "Save preview options and start again"
-    And I set the field with xpath "//div[@class='qtext']//input[contains(@id, '1_answer')]" to "cat"
-    And I press "Check"
-    Then I should see "That is a bad answer."
-    And I should see "Generalfeedback: frog or toad would have been OK."
-    And I should see "The correct answer is: frog"
+    And I click on "//input[@id='radio_checked_question_0_0_2']" "xpath"
+    And I set the field with xpath "//input[@id='freetext_question_2_0']" to "Text 3"
+    And I press "Submit and finish"
+    Then I should see "Your answer is partially correct."
+    And I should see "The correct answer is: 1 -> A, 2 -> B, 1 -> Answer 1, 2 -> Answer 2, 1 -> Text 1, 2 -> Text 2"

@@ -53,6 +53,25 @@ class qtype_answersheet_question extends question_graded_automatically {
     public array $answersheets = [];
 
     /**
+     * Standard fields for the question.
+     */
+    /** @var array $answers Contains the answers for this question. */
+    public array $answers = [];
+
+    /** @var string Feedback for any correct response. */
+    public $correctfeedback;
+    /** @var int format of $correctfeedback. */
+    public $correctfeedbackformat;
+    /** @var string Feedback for any partially correct response. */
+    public $partiallycorrectfeedback;
+    /** @var int format of $partiallycorrectfeedback. */
+    public $partiallycorrectfeedbackformat;
+    /** @var string Feedback for any incorrect response. */
+    public $incorrectfeedback;
+    /** @var int format of $incorrectfeedback. */
+    public $incorrectfeedbackformat;
+
+    /**
      * Returns data to be included in the form submission.
      *
      * @return array|string.

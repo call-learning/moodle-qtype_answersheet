@@ -64,18 +64,18 @@
     </div>
     {{#modules}}
         {{#radiochecked}}
-            <table class="table table-bordered table-questions radiochecked">
+            <table class="table table-bordered table-questions radiochecked"">
                 <thead>
-                    <tr>
-                        <th class="fixedwidth-100"></th>
-                        <th class="modulename" colspan="{{{colspan}}}">
-                            {{{modulename}}}
-                        </th>
-                    </tr>
+                <tr>
+                    <th class="fixedwidth-100"></th>
+                    <th class="modulename" colspan="{{{colspan}}}">
+                        {{{modulename}}}
+                    </th>
+                </tr>
                 </thead>
                 <tbody>
                 {{#questions}}
-                    <tr>
+                    <tr id="{{questionuid}}">
                         <td class="questionname">
                             <strong>{{{name}}}</strong>
                         </td>
@@ -83,14 +83,14 @@
                             <td class="fixedwidth-100 {{additionalclass}}">
                                 <div class="d-flex flex-column align-items-center">
                                     <strong>{{label}}</strong>
-                                    <input class="input" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}}>
+                                    <input class="input" type="radio" value="{{value}}" name="{{id}}" {{#selected}}checked{{/selected}} id="radio_checked_{{questionuid}}_{{value}}">
                                 </div>
                                 {{{feedbackimage}}}
                             </td>
                         {{/answers}}
                         {{#feedback}}
                             <td>
-                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                <button type="button" class="btn btn-info" data-container="body" data-toggle="popover" data-placement="top" title="{{.}}">?</button>
                             </td>
                         {{/feedback}}
                     </tr>
@@ -112,27 +112,27 @@
         {{#freetext}}
             <table class="table table-bordered table-questions freetext">
                 <thead>
-                    <tr>
-                        <th class="fixedwidth-100"></th>
-                        <th class="modulename">
-                            {{{modulename}}}
-                        </th>
-                    </tr>
+                <tr>
+                    <th class="fixedwidth-100"></th>
+                    <th class="modulename">
+                        {{{modulename}}}
+                    </th>
+                </tr>
                 </thead>
                 <tbody>
                 {{#questions}}
-                    <tr>
+                    <tr id="{{questionuid}}">
                         <td class="questionname">
                             <strong>{{{name}}}</strong>
                         </td>
                         <td class="{{additionalclass}}">
                             <div class="d-flex flex-column align-items-center">
-                                <input class="input form-control text-500" type="text" value="{{response}}" name="{{id}}">
+                                <input class="input form-control text-500" type="text" value="{{response}}" name="{{id}}" id="freetext_{{questionuid}}">
                             </div>
                         </td>
                         {{#feedback}}
                             <td>
-                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                <button type="button" class="btn btn-info" data-container="body" data-toggle="popover" data-placement="top" title="{{.}}">?</button>
                             </td>
                         {{/feedback}}
                     </tr>
@@ -154,16 +154,16 @@
         {{#letterbyletter}}
             <table class="table table-bordered table-questions letterbyletter">
                 <thead>
-                    <tr>
+                <tr>
                     <th class="fixedwidth-100"></th>
-                        <th class="modulename" colspan="{{{colspan}}}">
-                            {{{modulename}}}
-                        </th>
-                    </tr>
+                    <th class="modulename" colspan="{{{colspan}}}">
+                        {{{modulename}}}
+                    </th>
+                </tr>
                 </thead>
                 <tbody>
                 {{#questions}}
-                    <tr data-region="letterbyletterquestion">
+                    <tr data-region="letterbyletterquestion" id="{{questionuid}}">
                         <td class="questionname">
                             <strong>{{{name}}}</strong>
                             <input type="hidden" name="{{id}}" data-region="hiddeninput" data-id="{{id}}" value="{{response}}">
@@ -171,14 +171,17 @@
                         {{#answers}}
                             <td class="fixedwidth-100 {{additionalclass}}">
                                 <div class="d-flex flex-column align-items-center">
-                                    <input class="input letterinput" type="text" data-region="letterinput" data-index="{{index}}">
+                                    <input class="input letterinput" type="text"
+                                           data-region="letterinput" data-index="{{index}}"
+                                           id="letter_by_letter_{{questionuid}}_{{index}}"
+                                    >
                                 </div>
                                 {{{feedbackimage}}}
                             </td>
                         {{/answers}}
                         {{#feedback}}
                             <td>
-                                <button type="button" class="btn btn-info" data-container="body"  data-toggle="popover" data-placement="top" title="{{.}}">?</button>
+                                <button type="button" class="btn btn-info" data-container="body" data-toggle="popover" data-placement="top" title="{{.}}">?</button>
                             </td>
                         {{/feedback}}
                     </tr>
@@ -199,8 +202,8 @@
     {{/modules}}
 </div>
 {{#js}}
-require(['qtype_answersheet/local/questions'], function(questions) {
+    require(['qtype_answersheet/local/questions'], function(questions) {
     const element = document.querySelector('[data-region="answersheet_question"]');
     questions.init(element, {{questionid}});
-});
+    });
 {{/js}}

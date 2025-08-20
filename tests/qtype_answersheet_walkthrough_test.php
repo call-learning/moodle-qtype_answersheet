@@ -14,20 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace qtype_answersheet;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
-require_once($CFG->dirroot . '/question/type/answersheet/tests/helper.php');
+
+use qtype_answersheet_test_helper;
+use question_contains_tag_with_attributes;
+use question_definition;
+use question_hint_with_parts;
+use question_state;
+use question_test_helper;
+use test_question_maker;
 
 /**
- * Unit tests for the drag-and-drop onto image question type.
+ * Unit tests for the anwersheet question type.
  *
  * @package     qtype_answersheet
  * @copyright   2021 Laurent David <laurent@call-learning.fr>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_test_base {
+final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_test_base {
     /**
      * @var qtype_answersheet_test_helper
      */
@@ -60,18 +69,18 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
-        $this->start_attempt_at_question($this->dd, 'interactive', 10);
+        $this->start_attempt_at_question($this->dd, 'interactive', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
 
+        $this->check_current_output();
+
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 0, 1),
-            $this->get_contains_answer_expectation($this->dd, 0, 2),
-            $this->get_contains_answer_expectation($this->dd, 0, 3),
-            $this->get_contains_answer_expectation($this->dd, 0, 4),
-            $this->get_contains_answer_expectation($this->dd, 1, 1),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
@@ -87,11 +96,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_mark(null);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullwrong),
+            ...$this->get_all_input_expectation($fullwrong),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation(),
@@ -107,17 +114,14 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullwrong),
+            ...$this->get_all_input_expectation($fullwrong),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_try_again_button_expectation(true),
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_contains_hint_expectation('This is the first hint')
         );
-
         // Do try again.
         $this->process_submission(['-tryagain' => 1]);
 
@@ -126,11 +130,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_mark(null);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullwrong),
+            ...$this->get_all_input_expectation($fullwrong),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation(),
@@ -146,13 +148,11 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(6.666667); // Penalty of 50%, 1 tries done, see adjust_fraction.
+        $this->check_current_mark(4); // Penalty of 50%, 1 tries done, see adjust_fraction.
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullright),
+            ...$this->get_all_input_expectation($fullright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_correct_expectation(),
             $this->get_no_hint_visible_expectation()
@@ -163,80 +163,8 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(6.666667);
+        $this->check_current_mark(4.0000002);
     }
-
-    /**
-     * Get answer expectation
-     *
-     * @param question_definition $dd
-     * @param int $answerindex
-     * @param mixed $value
-     * @param bool $enabled
-     * @param false $checked
-     * @return question_contains_tag_with_attributes
-     */
-    public function get_contains_answer_expectation($dd, $answerindex, $value, $enabled = true, $checked = false) {
-        $fieldname = $this->quba->get_field_prefix($this->slot);
-        $fieldname .= 'answer' . array_values($dd->answers)[$answerindex]->id;
-        return $this->get_contains_radio_expectation(
-            [
-                'name' => $fieldname,
-                'value' => $value,
-            ],
-            $enabled,
-            $checked
-        );
-    }
-
-    /**
-     * Get answer expectation for current answer
-     *
-     * @param question_definition $dd
-     * @param int $answerindex
-     * @param mixed $value
-     * @param mixed $currentanswer
-     * @param bool $enabled
-     * @return question_contains_tag_with_attributes
-     */
-    public function get_contains_answer_expectation_currentanswer($dd, $answerindex, $value, $currentanswer, $enabled = true) {
-        $fieldname = $this->quba->get_field_prefix($this->slot);
-        $fieldname .= 'answer' . array_values($dd->answers)[$answerindex]->id;
-        $currentanswer = array_values($currentanswer); // We can index from 0;
-        return $this->get_contains_radio_expectation(
-            [
-                'name' => $fieldname,
-                'value' => $value,
-            ],
-            $enabled,
-            $currentanswer[$answerindex] == $value
-        );
-    }
-
-    /**
-     * Get right responses that would end up being submitted (integer for choice)
-     * (Radio will be 1, 2, ...)
-     * @return array The expected response for the restored question.
-     */
-    private function get_right_machine_response() {
-        $responsekeys = array_map(function($key) {
-            return 'answer' . $key;
-        }, array_keys($this->dd->answers));
-        $responses = array_map(function($extraanswer) {
-            $value = $extraanswer['value'] ?? '';
-            if (!empty($extraanswer['options'])) {
-                $options = json_decode($extraanswer['options'], true);
-                if(!is_array($options)) {
-                    $options = [];
-                }
-                $options = array_flip($options);
-                return $options[$value] ?? $value;
-            }
-            return $value;
-        }, $this->dd->extraanswerfields);
-        return array_combine($responsekeys, $responses);
-    }
-
 
     /**
      * Test deferred feedback
@@ -246,18 +174,16 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
-        $this->start_attempt_at_question($this->dd, 'deferredfeedback', 10);
+        $this->start_attempt_at_question($this->dd, 'deferredfeedback', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 0, 1),
-            $this->get_contains_answer_expectation($this->dd, 0, 2),
-            $this->get_contains_answer_expectation($this->dd, 0, 3),
-            $this->get_contains_answer_expectation($this->dd, 0, 4),
-            $this->get_contains_answer_expectation($this->dd, 1, 1),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_feedback_expectation()
         );
 
@@ -270,11 +196,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_mark(null);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullright),
+            ...$this->get_all_input_expectation($partialanswer),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation()
         );
@@ -285,11 +209,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullright),
+            ...$this->get_all_input_expectation($fullright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation()
         );
@@ -299,14 +221,11 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(10);
-
+        $this->check_current_mark(6);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 1, 1, $fullright),
+            ...$this->get_all_input_expectation($fullright),
+        );
+        $this->check_current_output(
             $this->get_contains_correct_expectation()
         );
 
@@ -319,7 +238,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedpartial);
-        $this->check_current_mark(8.3333333333333);
+        $this->check_current_mark(5);
     }
 
     /**
@@ -330,17 +249,15 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
-        $this->start_attempt_at_question($this->dd, 'deferredfeedback', 10);
+        $this->start_attempt_at_question($this->dd, 'deferredfeedback', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 0, 1),
-            $this->get_contains_answer_expectation($this->dd, 0, 2),
-            $this->get_contains_answer_expectation($this->dd, 0, 3),
-            $this->get_contains_answer_expectation($this->dd, 0, 4),
-            $this->get_contains_answer_expectation($this->dd, 1, 1),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation()
         );
@@ -357,11 +274,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 0, 1),
-            $this->get_contains_answer_expectation($this->dd, 0, 2),
-            $this->get_contains_answer_expectation($this->dd, 0, 3),
-            $this->get_contains_answer_expectation($this->dd, 0, 4),
-            $this->get_contains_answer_expectation($this->dd, 1, 1),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation()
         );
@@ -374,11 +289,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$gaveup);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 0, 1),
-            $this->get_contains_answer_expectation($this->dd, 0, 2),
-            $this->get_contains_answer_expectation($this->dd, 0, 3),
-            $this->get_contains_answer_expectation($this->dd, 0, 4),
-            $this->get_contains_answer_expectation($this->dd, 1, 1)
+            ...$this->get_all_input_expectation(),
         );
     }
 
@@ -390,16 +301,15 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(13, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
-        $this->start_attempt_at_question($this->dd, 'deferredfeedback', 10);
+        $this->start_attempt_at_question($this->dd, 'deferredfeedback',6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 0, 1),
-            $this->get_contains_answer_expectation($this->dd, 0, 2),
-            $this->get_contains_answer_expectation($this->dd, 0, 3),
-            $this->get_contains_answer_expectation($this->dd, 0, 4),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation()
         );
@@ -413,14 +323,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$invalid);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation($partialanswer),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_feedback_expectation()
         );
@@ -430,16 +335,11 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedpartial);
-        $this->check_current_mark(3);
+        $this->check_current_mark(3); // 50% of the question is answered.
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation($partialanswer),
+        );
+        $this->check_current_output(
             $this->get_contains_partcorrect_expectation()
         );
     }
@@ -453,7 +353,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
         $this->dd->penalty = 0.3;
-        $this->start_attempt_at_question($this->dd, 'interactive', 10);
+        $this->start_attempt_at_question($this->dd, 'interactive', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
@@ -472,13 +372,10 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Submit an response with the first two parts right.
         $fullright = $this->helper->get_right_machine_response($this->dd);
-        $fullwrong = $this->helper->get_right_machine_response($this->dd);
-        $fullwrong = array_map(function($value) {
-            return 'Z';
-        }, $fullwrong);
+        $fullwrong = $this->helper->get_full_wrong_machine_response($this->dd);
         $partialright = array_merge(
             array_slice($fullright, 0, 3),
-            array_slice($fullwrong, 3, 7),
+            array_slice($fullwrong, 3, 3),
             ['-submit' => 1]
         );
         $this->process_submission($partialright);
@@ -487,14 +384,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullwrong),
+            ...$this->get_all_input_expectation($partialright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_try_again_button_expectation(true),
             $this->get_does_not_contain_correctness_expectation(),
@@ -503,26 +395,20 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             $this->get_contains_standard_partiallycorrect_combined_feedback_expectation()
         );
 
-        // Check that extract responses will return the reset data.
-        $prefix = $this->quba->get_field_prefix($this->slot);
-        $this->assertEquals(
-            array_slice($fullright, 0, 3),
-            $this->quba->extract_responses(
-                $this->slot,
-                [$prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($this->dd, 0) => '1',
-                    $prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($this->dd, 1) => '2',
-                    $prefix . qtype_answersheet_test_helper::get_fieldname_from_definition($this->dd, 2) => '3',
-                '-tryagain' => 1]
-            )
-        );
-
         // Do try again.
         // keys p3 and p4 are extra hidden fields to clear data.
-        $fullblank = qtype_answersheet_test_helper::create_full_response_with_value($this->dd, '');
+        $fullblankkeys = $this->helper->get_answer_keys($this->dd);
+        $fullblank = array_fill_keys(
+            $fullblankkeys,
+            '',
+        );
+        $fullblank = array_map(function($value) {
+            return '';
+        }, $fullblank);
 
         $partialblanktryagain = array_merge(
             array_slice($fullright, 0, 3),
-            array_slice($fullblank, 3, 7),
+            array_slice($fullblank, 3, 3),
             ['-tryagain' => 1]
         );
         $this->process_submission($partialblanktryagain);
@@ -531,14 +417,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation($partialblanktryagain),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_try_again_button_expectation(),
             $this->get_does_not_contain_correctness_expectation(),
@@ -550,8 +431,8 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         // Submit an response with the first and last parts right.
         $partialright = array_merge(
             array_slice($fullright, 0, 1),
-            array_slice($fullblank, 1, 5),
-            array_slice($fullright, 6, 4),
+            array_slice($fullblank, 1, 1),
+            array_slice($fullright, 2, 4),
             ['-submit' => 1]
         );
         $this->process_submission($partialright);
@@ -560,14 +441,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation($partialright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_try_again_button_expectation(true),
             $this->get_does_not_contain_correctness_expectation(),
@@ -583,10 +459,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 1, 1),
-            $this->get_contains_answer_expectation($this->dd, 2, 2),
-            $this->get_contains_answer_expectation($this->dd, 3, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation($partialblanktryagain),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_try_again_button_expectation(),
             $this->get_does_not_contain_correctness_expectation(),
@@ -600,12 +475,11 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(4);
+        $this->check_current_mark(2.4);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
+            ...$this->get_all_input_expectation($fullright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_does_not_contain_try_again_button_expectation(),
             $this->get_contains_correct_expectation(),
@@ -624,16 +498,15 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
 
-        $this->start_attempt_at_question($this->dd, 'interactive', 10);
+        $this->start_attempt_at_question($this->dd, 'interactive', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
@@ -641,7 +514,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Save the right answer.
-        $fullright = qtype_answersheet_test_helper::create_full_right_response($this->dd);
+        $fullright = $this->helper->get_right_machine_response($this->dd);
         $this->process_submission($fullright);
 
         // Finish the attempt without clicking check.
@@ -649,12 +522,11 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(10);
+        $this->check_current_mark(6);
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
+            ...$this->get_all_input_expectation($fullright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_correct_expectation(),
             $this->get_no_hint_visible_expectation()
@@ -665,7 +537,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedright);
-        $this->check_current_mark(10);
+        $this->check_current_mark(6);
     }
 
     /**
@@ -677,17 +549,16 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
             new question_hint_with_parts(14, 'This is the second hint.', FORMAT_HTML, true, true),
         ];
 
-        $this->start_attempt_at_question($this->dd, 'interactive', 10);
+        $this->start_attempt_at_question($this->dd, 'interactive', 6);
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
@@ -696,10 +567,8 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Save the a partially right answer.
         $fullright = $this->helper->get_right_machine_response($this->dd);
-        $fullwrong = array_map(function($value) {
-            return 'Z';
-        }, $fullright);
-        $partialright = array_slice($fullright, 0, 8) + array_slice($fullwrong, 8, 10);
+        $fullwrong = $this->helper->get_full_wrong_machine_response($this->dd);
+        $partialright = array_slice($fullright, 0, 3) + array_slice($fullwrong, 4, 2);
         $this->process_submission($partialright);
 
         // Finish the attempt without clicking check.
@@ -707,13 +576,12 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedpartial);
-        $this->check_current_mark(8);
+        $this->check_current_mark(3);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullright),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullright),
+            ...$this->get_all_input_expectation($partialright),
+        );
+        $this->check_current_output(
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_partcorrect_expectation(),
             $this->get_no_hint_visible_expectation()
@@ -724,7 +592,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
 
         // Verify.
         $this->check_current_state(question_state::$gradedpartial);
-        $this->check_current_mark(8);
+        $this->check_current_mark(3);
     }
 
     /**
@@ -743,10 +611,9 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_mark(null);
 
         $this->check_current_output(
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
+            ...$this->get_all_input_expectation(),
+        );
+        $this->check_current_output(
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(3),
@@ -754,18 +621,17 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         );
 
         // Save the a completely wrong answer.
-        $fullwrong = qtype_answersheet_test_helper::create_full_wrong_response($this->dd);
+        $fullwrong = $this->helper->get_full_wrong_machine_response($this->dd);
         $this->process_submission($fullwrong + ['-submit' => 1]);
 
         // Verify.
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
+            ...$this->get_all_input_expectation($fullwrong),
+        );
+        $this->check_current_output(
             $this->get_contains_marked_out_of_summary(),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 1, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 2, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 3, $fullwrong),
-            $this->get_contains_answer_expectation_currentanswer($this->dd, 0, 4, $fullwrong),
             $this->get_does_not_contain_submit_button_expectation(),
             $this->get_contains_hint_expectation('This is the first hint')
         );
@@ -773,7 +639,7 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         // Do try again.
         $fullempty = $this->helper->get_right_machine_response($this->dd);
         $fullempty = array_map(function($value) {
-                return '';
+            return '';
         }, $fullempty);
         $this->process_submission($fullempty + ['-tryagain' => 1]);
 
@@ -781,15 +647,160 @@ final class qtype_answersheet_walkthrough_test extends qbehaviour_walkthrough_te
         $this->check_current_state(question_state::$todo);
         $this->check_current_mark(null);
         $this->check_current_output(
+            ...$this->get_all_input_expectation($fullempty),
+        );
+        $this->check_current_output(
             $this->get_contains_marked_out_of_summary(),
-            $this->get_contains_answer_expectation($this->dd, 4, 1),
-            $this->get_contains_answer_expectation($this->dd, 4, 2),
-            $this->get_contains_answer_expectation($this->dd, 4, 3),
-            $this->get_contains_answer_expectation($this->dd, 4, 4),
             $this->get_contains_submit_button_expectation(true),
             $this->get_does_not_contain_feedback_expectation(),
             $this->get_tries_remaining_expectation(2),
             $this->get_no_hint_visible_expectation()
         );
     }
+
+    /**
+     * Get answer expectation
+     *
+     * @param question_definition $dd
+     * @param int $answerindex
+     * @param mixed $value
+     * @param bool $enabled
+     * @param mixed $currentanswer
+     * @return question_contains_tag_with_attributes
+     */
+    public function get_contains_radio_answer_expectation(
+        question_definition $dd,
+        int $answerindex,
+        mixed $value,
+        bool $enabled = true,
+        mixed $currentanswer = null,
+    ) {
+        $fieldname = $this->quba->get_field_prefix($this->slot);
+        $fieldname .= 'answer' . array_values($dd->answers)[$answerindex]->id;
+        return $this->get_contains_radio_expectation(
+            [
+                'name' => $fieldname,
+                'value' => $value,
+            ],
+            $enabled,
+            $currentanswer == $value
+        );
+    }
+
+    /**
+     * Get answer expectation for input with letter answer
+     *
+     * @param question_definition $dd
+     * @param int $answerindex
+     * @param int $inputindex
+     * @param mixed $currentanswer = null,
+     * @return question_contains_tag_with_attributes
+     */
+    public function get_contains_input_answer_letter_expectation(
+        question_definition $dd,
+        int $answerindex,
+        int $inputindex,
+        mixed $currentanswer = null,
+    ) {
+        $expectedattributes = [
+            'type' => 'text',
+            'data-index' => $inputindex,
+            'class' => "input letterinput",
+        ];
+        return new question_contains_tag_with_attributes('input', $expectedattributes, []);
+    }
+
+    /**
+     * Get answer expectation for input with letter answer
+     *
+     * @param question_definition $dd
+     * @param int $answerindex
+     * @param mixed $currentanswer = null,
+     * @return question_contains_tag_with_attributes
+     */
+    public function get_contains_input_answer_letter_hidden_expectation(
+        question_definition $dd,
+        int $answerindex,
+        mixed $currentanswer = null,
+    ) {
+        $fieldname = $this->quba->get_field_prefix($this->slot);
+        $fieldname .= 'answer' . array_values($dd->answers)[$answerindex]->id;
+        $expectedattributes = [
+            'name' => $fieldname,
+            'type' => 'hidden',
+        ];
+        if (isset($currentanswerndex) && $currentanswer !== '') {
+            $expectedattributes['value'] = $currentanswer;
+        }
+        return new question_contains_tag_with_attributes('input', $expectedattributes, []);
+    }
+    /**
+     * Get answer expectation for input with text answer
+     *
+     * @param question_definition $dd
+     * @param int $answerindex
+     * @param mixed $currentanswer
+     * @return question_contains_tag_with_attributes
+     */
+    public function get_contains_input_answer_text_expectation(
+        question_definition $dd,
+        int $answerindex,
+        mixed $currentanswer = null,
+    ) {
+        $fieldname = $this->quba->get_field_prefix($this->slot);
+        $fieldname .= 'answer' . array_values($dd->answers)[$answerindex]->id;
+        $expectedattributes = [
+            'name' => $fieldname,
+            'type' => 'text',
+        ];
+        if (isset($currentanswer) && $currentanswer !== '') {
+            $expectedattributes['value'] = $currentanswer;
+        }
+        return new question_contains_tag_with_attributes('input', $expectedattributes, []);
+    }
+
+    /**
+     * Get all input expectations for the "standard" answersheet question version.
+     *
+     * The question contains 2 radio buttons, 2 letter by letter inputs, and 2 text inputs.
+     *
+     * @param array $currentanswer
+     * @return array
+     */
+    private function get_all_input_expectation(array $currentanswer = []): array {
+        $answerkeys = $this->helper->get_answer_keys($this->dd);
+        $currentanswers = array_map(function($key) use ($currentanswer) {
+            return $currentanswer[$key] ?? null;
+        }, $answerkeys);
+        $currentanswer = array_values($currentanswers); // We can index from 0;
+        return [
+            // This is the first set of radio buttons.
+            $this->get_contains_radio_answer_expectation($this->dd, 0, 1, currentanswer: $currentanswer[0]),
+            $this->get_contains_radio_answer_expectation($this->dd, 0, 2, currentanswer: $currentanswer[0]),
+            $this->get_contains_radio_answer_expectation($this->dd, 0, 3, currentanswer: $currentanswer[0]),
+            $this->get_contains_radio_answer_expectation($this->dd, 0, 4, currentanswer: $currentanswer[0]),
+            // Second radio button is there and has possible values from 1 to 4.
+            $this->get_contains_radio_answer_expectation($this->dd, 1, 1, currentanswer: $currentanswer[1]),
+            $this->get_contains_radio_answer_expectation($this->dd, 1, 2, currentanswer: $currentanswer[1]),
+            $this->get_contains_radio_answer_expectation($this->dd, 1, 3, currentanswer: $currentanswer[1]),
+            $this->get_contains_radio_answer_expectation($this->dd, 1, 4, currentanswer: $currentanswer[1]),
+            // Now check that we have a set of input called letter input (4).
+            $this->get_contains_input_answer_letter_expectation($this->dd, 2, 1, currentanswer: $currentanswer[2]),
+            $this->get_contains_input_answer_letter_expectation($this->dd, 2, 2, currentanswer: $currentanswer[2]),
+            $this->get_contains_input_answer_letter_expectation($this->dd, 2, 3, currentanswer: $currentanswer[2]),
+            $this->get_contains_input_answer_letter_expectation($this->dd, 2, 4, currentanswer: $currentanswer[2]),
+            $this->get_contains_input_answer_letter_hidden_expectation($this->dd, 2, currentanswer: $currentanswer[2]),
+            // Second letter by letter input.
+            $this->get_contains_input_answer_letter_expectation($this->dd, 3, 1, currentanswer: $currentanswer[3]),
+            $this->get_contains_input_answer_letter_expectation($this->dd, 3, 2, currentanswer: $currentanswer[3]),
+            $this->get_contains_input_answer_letter_expectation($this->dd, 3, 3, currentanswer: $currentanswer[3]),
+            $this->get_contains_input_answer_letter_expectation($this->dd, 3, 4, currentanswer: $currentanswer[3]),
+            $this->get_contains_input_answer_letter_hidden_expectation($this->dd, 3, currentanswer: $currentanswer[3]),
+            // Next is to check for the other input text.
+            $this->get_contains_input_answer_text_expectation($this->dd, 4, currentanswer: $currentanswer[4]),
+            $this->get_contains_input_answer_text_expectation($this->dd, 5, currentanswer: $currentanswer[5]),
+        ];
+
+    }
+
 }

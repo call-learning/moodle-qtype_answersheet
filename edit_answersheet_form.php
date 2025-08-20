@@ -51,8 +51,9 @@ class qtype_answersheet_edit_form extends question_edit_form {
         $mform->addElement(
             'text',
             'startnumbering',
-            get_string('startnumbering', 'qtype_answersheet')
+            get_string('startnumbering', 'qtype_answersheet'),
         );
+        $mform->setDefault('startnumbering', 1);
         $mform->setType('startnumbering', PARAM_INT);
 
         $id = optional_param('id', 0, PARAM_INT);

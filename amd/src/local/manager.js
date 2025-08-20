@@ -174,7 +174,7 @@ class Manager {
             const type = this.TYPES[mod.type];
             mod[type] = true;
             mod.indicator = await this.getIndicator(mod.numoptions, mod.type);
-            mod.rows.map(row => {
+            mod.rows.forEach((row) => {
                 let selectedValue = '';
                 row.cells.forEach(cell => {
                     if (cell.column === 'answer') {
@@ -198,12 +198,13 @@ class Manager {
                     cell.edit = true;
                     return cell;
                 });
-                return row;
             });
         }
+        // To calculate the answerid index, so we can make up an id related to the row index.
+        // Used in behat tests to find the correct answer input.
+        modules = await this.recomputeIds(modules);
         return modules;
     }
-
     /**
      * Get the row object that can be accepted by the webservice.
      * @return {Array} The keys.
@@ -330,10 +331,31 @@ class Manager {
         }
         // Inject the row after the clicked row.
         rows.push(row);
+        // Compute the id for each cells.
         State.setValue('modules', modules);
         this.resetRowSortorder();
     }
 
+    /**
+     * Recompute the ids for the modules and cells.
+     * @param {Array} modules The modules.
+     * @return {Array} Modules with computed ids (id_answer_0_0, id_answer_0_1, etc.).
+     */
+    async recomputeIds(modules) {
+        // To calculate the answerid index, so we can make up an id related to the row index.
+        // Used in behat tests to find the correct answer input.
+        for (const [moduleIndex, mod] of modules.entries()) {
+            mod.modid = `id_module_${moduleIndex}`; // Used mostly for behat tests.
+            mod.rows.forEach((row, rowIndex) => {
+                row.rowid = `id_row_${moduleIndex}_${rowIndex}`;
+                row.cells = row.cells.map(cell => {
+                    cell.cellid = `id_${cell.column}_${moduleIndex}_${rowIndex}`;
+                    return cell;
+                });
+            });
+        }
+        return modules;
+    }
     /**
      * Create a new row.
      *

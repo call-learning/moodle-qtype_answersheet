@@ -132,16 +132,16 @@
                 {{#visible}}
                     <td data-cell data-columnid="{{columnid}}" class="{{^canedit}}readonly {{/canedit}}{{#float}}float {{/float}}{{#int}}int {{/int}}{{column}}">
                         {{#int}}
-                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
+                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}" id="{{cellid}}"/>
                         {{/int}}
                         {{#float}}
-                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}"/>
+                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="number" value="{{{value}}}" placeholder="{{{sample_value}}}" id="{{cellid}}"/>
                         {{/float}}
                         {{#text}}
-                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="text" value="{{{value}}}" placeholder="{{{sample_value}}}" />
+                            <input class="question-answer-input" data-input="auto" {{^canedit}}readonly{{/canedit}} type="text" value="{{{value}}}" placeholder="{{{sample_value}}}" id="{{cellid}}"/>
                         {{/text}}
                         {{#select}}
-                            <select data-input="auto" {{^canedit}}readonly{{/canedit}} class="question-answer-input">
+                            <select data-input="auto" {{^canedit}}readonly{{/canedit}} class="question-answer-input" id="{{cellid}}">
                                 {{#options}}
                                     <option value="{{{name}}}" {{#selected}}selected{{/selected}}>{{{name}}}</option>
                                 {{/options}}

@@ -107,6 +107,7 @@ class answersheet_question implements renderable, templatable {
         // This will not query the database, but will return the data from the question itself (this is better this way
         // for test purpose).
         $newdata = [];
+        $moduleindex = 0;
         foreach ($data as $module) {
             $newmodule = [
                 'id' => $module['id'],
@@ -123,6 +124,7 @@ class answersheet_question implements renderable, templatable {
                     return chr(65 + $index);
                 }, range(0, $module['numoptions'] - 1));
             }
+            $rowindex = 0;
             foreach ($module['rows'] as $row) {
                 $newquestion = [
                     'id' => $this->qa->get_qt_field_name('answer' . $row['answerid']),
@@ -188,9 +190,12 @@ class answersheet_question implements renderable, templatable {
                         $newquestion['iscorrect'] = $iscorrect;
                     }
                 }
+                $newquestion['questionuid'] = "question_{$moduleindex}_{$rowindex}";
                 $newmodule['questions'][] = $newquestion;
+                $rowindex++;
             }
             $newdata[] = $newmodule;
+            $moduleindex++;
         }
         return $newdata;
     }
