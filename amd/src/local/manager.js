@@ -455,7 +455,7 @@ class Manager {
         moduleElement.classList.add(this.TYPES[type]);
         const modules = State.getValue('modules');
         modules.forEach(moduleObject => {
-            if (moduleObject.id === moduleid) {
+            if (moduleObject.id == moduleid) {
                 moduleObject.modulename = name;
                 moduleObject.type = parseInt(type);
                 moduleObject.class = this.TYPES[type];

@@ -74,38 +74,5 @@ The plugin includes comprehensive tests to ensure reliability:
 - Leverage Moodle's backup and restore APIs for handling course data.
 - Write unit tests for all new features and bug fixes.
 
-### Extra Answer Fields and Extra Question Fields
-
-- **`extra_question_fields`**:
-  - Adds additional fields to the `qtype_answersheet` table, such as feedback formats, numbering options, and other question-level settings.
-  - These fields are included when the question is loaded, saved, or backed up.
-
-- **`extra_answer_fields`**:
-  - Adds additional fields to the `qtype_answersheet_answers` table, such as `moduleid`, `sortorder`, `name`, `numoptions`, and more.
-  - These fields store detailed information about each answer, including its relationship to modules and additional metadata.
-
-- **Backup and Restore**:
-  - During the backup process, both `extra_question_fields` and `extra_answer_fields` are included to ensure all metadata is preserved.
-  - **Important Note**: The backup process must first handle the modules (e.g., documents, audio) before backing up the answersheet data. If the modules are not backed up first, the restore process will fail because the answersheet data depends on the module records.
-
-### Loading All Information into the Question
-
-- **Reason**: To avoid repeated database queries during question usage, all necessary data is loaded into the question object at once. This includes:
-  - Answersheet data (via `answersheet_api::add_data`).
-  - Document data (via `answersheet_docs::add_data`).
-  - Combined feedback, hints, and other metadata.
-
-- **Test Helpers**:
-  - The test helpers for this question type are designed in two ways:
-    1. **Form-Based Question Creation**:
-       - Simulates creating a question through the Moodle form interface.
-       - Saves the question and its associated data into the database.
-    2. **Virtual Question Creation**:
-       - Creates a question entirely in memory without saving it to the database.
-       - Useful for testing scenarios where database persistence is not required.
-
-- **Implication**:
-  - Because of the second type of test helper (virtual question creation), the question object must be fully self-contained. All necessary data must be loaded into the object to ensure it behaves correctly without relying on database queries.
-
 ## License
 This plugin is licensed under the GNU General Public License v3. See the LICENSE.md file for details.
