@@ -237,6 +237,54 @@ final class qtype_answersheet_question_test extends advanced_testcase {
     }
 
     /**
+     * Test is same answer
+     *
+     * @param string $currentanswer The current answer to check.
+     * @param int $answerindex The index of the answer to compare against.
+     * @param bool $issame Whether the current answer is the same as the answer at
+     *
+     * @dataProvider is_same_answer_provider
+     */
+    public function test_is_same_answer(string $currentanswer, int $answerindex, bool $issame): void {
+        $dd = test_question_maker::make_question('answersheet');
+        $ids = $this->testhelper->get_answer_ids($this->dd);
+        $answerkey = $ids[$answerindex];
+        $this->assertEquals($issame, (bool) $dd->is_same_answer($currentanswer, $dd->answers[$answerkey]));
+    }
+
+    /**
+     * Data provider for test_is_same_answer.
+     *
+     * @return array
+     */
+    public static function is_same_answer_provider(): array {
+        // We consider that:
+        // - Radio: right answer is '1' (slot 0)
+        // - Letter by letter: right answer is 'ANSWER 1' or 'answer 1' or 'ANSWER 1 BIS' (we truncate the value to numoptions).
+        //   (slot 2)
+        // - Freetext: right answer is 'Text 1', we do not truncate the value but we consider that the case or ponctuation
+        //   does not matter.
+        //   (slot 4)
+        return [
+            'Radio: rightanswer' => ['1', 0, true],
+            'Radio: empty' => ['', 0, false],
+            'Radio: wronganswer' => ['2', 0, false],
+            'Letter by letter: right answer' => ['ANSWER 1', 2, true],
+            'Letter by letter: empty' => ['', 2, false],
+            'Letter by letter: more letters' => ['ANSWER 1 BIS', 2, true], // Same answer but we truncate the value to numoptions.
+            'Letter by letter: lowercase' => ['Answer 1',2, true],
+            'Letter by letter: wronganswer' => ['Answer 2',2, false],
+            'Letter by letter: wronganswer short' => ['An',2, false],
+            'Freetext: rightanswser' => ['Text 1', 4, true],
+            'Freetext: empty' => ['', 4, false],
+            'Freetext: wronganswer' => ['Text 2', 4, false],
+            'Freetext: lowercase' => ['text 1', 4, true],
+            'Freetext: with double space' => ['text   1', 4, true],
+            'Freetext: with punctuation' => ['text :  1!,', 4, true],
+        ];
+    }
+
+    /**
      * Set up the test environment.
      */
     protected function setUp(): void {

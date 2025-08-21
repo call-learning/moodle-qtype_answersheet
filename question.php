@@ -20,6 +20,7 @@
 // Make sure to implement all the abstract methods of the base class.
 use qtype_answersheet\local\api\answersheet;
 use qtype_answersheet\local\persistent\answersheet_answers;
+use qtype_answersheet\local\persistent\answersheet_module;
 
 /**
  * Question definition class for answersheet.
@@ -318,7 +319,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $isrightvalue = $this->compare_response_with_answer($currentresponse, $answerinfo);
+            $isrightvalue = $this->is_same_answer($currentresponse, $answerinfo);
             $totalscore += $isrightvalue;
         }
         $fraction = $totalscore / count($this->answers);
@@ -326,20 +327,22 @@ class qtype_answersheet_question extends question_graded_automatically {
     }
 
     /**
-     * Check if the response is correct
+     * Check if the response is the same.
      *
-     * @param array $currentresponse
-     * @param question_answer $answerinfo
+     * Here we compare the current response value with the answer info and they are both the "human" values.
+     * @param string $currentresponse the current response value (as submitted by the user, so A, B, C for the radio).
+     * @param question_answer $answerinfo the answer info to compare with (mostly in human readable format).
      * @return int 1 if correct, 0 if not
      */
-    public function compare_response_with_answer($currentresponse, question_answer $answerinfo) {
+    public function is_same_answer(mixed $currentresponse, question_answer $answerinfo) {
         $answersheet = $this->get_answersheets_from_answerid($answerinfo->id);
-        $normalised = answersheet::to_human_value(
+        $module = $this->modules[$answersheet->get('moduleid')];
+        $humanresponsevalue = answersheet::to_human_value(
             $currentresponse,
             $answersheet,
-            $this->modules[$answersheet->get('moduleid')]
+            $module
         );
-        if ($this->compare_keys($normalised, $answerinfo->answer)) {
+        if ($this->compare_keys($humanresponsevalue, $answerinfo->answer , $module)) {
             return 1;
         } else {
             return 0;
@@ -349,19 +352,38 @@ class qtype_answersheet_question extends question_graded_automatically {
     /**
      * Compare two keys in a case-insensitive manner and without accents if possible.
      *
-     * @param string $key1
-     * @param string $key2
+     * @param string $value1
+     * @param string $value2
+     * answersheet_module $module
      * @return bool
      */
-    private function compare_keys(string $key1, string $key2) {
+    private function compare_keys(string $value1, string $value2, $module) {
         // Compare keys in a case-insensitive manner.
         // We use trim to remove any leading or trailing whitespace.
         // Can you compare without accents ?
         if (function_exists('iconv')) {
-            $key1 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key1);
-            $key2 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $key2);
+            $value1 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value1);
+            $value2 = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value2);
         }
-        return strcasecmp(trim($key1), trim($key2)) === 0;
+        switch ($module->get('type')) {
+            case answersheet_module::LETTER_BY_LETTER:
+                $stringlength = $module->get('numoptions');
+                $value1 = strtolower(substr($value1, 0, $stringlength));
+                $value2 = strtolower(substr($value2, 0, $stringlength));
+            case answersheet_module::FREE_TEXT:
+                // We remove the punctiuation and double spaces.
+                $value1 = preg_replace('/[[:punct:]]/', '', $value1);
+                $value1 = preg_replace('/\s+/', ' ', $value1);
+                $value2 = preg_replace('/[[:punct:]]/', '', $value2);
+                $value2 = preg_replace('/\s+/', ' ', $value2);
+                $value1 = strtolower(trim($value1));
+                $value2 = strtolower(trim($value2));
+                break;
+            case answersheet_module::RADIO_CHECKED:
+            default:
+                break;
+        }
+        return strcasecmp($value1, $value2) === 0;
     }
 
     /**
@@ -376,7 +398,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $isrightvalue = $this->compare_response_with_answer($currentresponse, $answerinfo);
+            $isrightvalue = $this->is_same_answer($currentresponse, $answerinfo);
             if (!$isrightvalue) {
                 $fieldname = $this->field($answerkey);
                 unset($response[$fieldname]);
@@ -399,7 +421,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             if (is_null($currentresponse)) {
                 continue;
             }
-            $rightcount += $this->compare_response_with_answer($currentresponse, $answerinfo);
+            $rightcount += $this->is_same_answer($currentresponse, $answerinfo);
         }
         return [$rightcount, count($this->answers)];
     }
@@ -418,7 +440,7 @@ class qtype_answersheet_question extends question_graded_automatically {
             $finallyright = false;
             foreach ($responses as $i => $response) {
                 $currentresponse = $this->get_response_value($answerkey, $response);
-                if (!$this->compare_response_with_answer($currentresponse, $answerinfo)) {
+                if (!$this->is_same_answer($currentresponse, $answerinfo)) {
                     $lastwrongindex = $i;
                     $finallyright = false;
                 } else {

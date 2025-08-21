@@ -285,7 +285,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
                     'sortorder' => 2,
                     'name' => 'Module 2',
                     'type' => 2,
-                    'numoptions' => 4,
+                    'numoptions' => 8,
                     'rows' =>
                         [
                             [
@@ -550,6 +550,21 @@ class qtype_answersheet_test_helper extends question_test_helper {
         // Get the answer keys for the question.
         return array_map(function ($key) {
             return 'answer' . $key;
+        }, array_keys($question->answers));
+    }
+
+    /**
+     * Get the answer keys for the question.
+     *
+     * This method returns an array of answer keys for the given question definition.
+     *
+     * @param question_definition $question The question definition object.
+     * @return array An array of answer id.
+     */
+    public function get_answer_ids(question_definition $question): array {
+        // Get the answer keys for the question.
+        return array_map(function ($key) {
+            return $key;
         }, array_keys($question->answers));
     }
 }
