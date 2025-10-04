@@ -89,6 +89,7 @@ class get_data extends external_api {
                     'numoptions' => new external_value(PARAM_INT, 'Options', VALUE_REQUIRED),
                     'type' => new external_value(PARAM_INT, 'Type', VALUE_REQUIRED),
                     'class' => new external_value(PARAM_TEXT, 'Class', VALUE_REQUIRED),
+                    'questionpoints' => new external_value(PARAM_INT, 'Number of points per question', VALUE_OPTIONAL, 1),
                     'indicator' => new external_value(PARAM_TEXT, 'Indicator', VALUE_REQUIRED),
                     'rows' => new external_multiple_structure(
                         new external_single_structure([

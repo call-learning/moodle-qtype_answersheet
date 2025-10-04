@@ -79,6 +79,7 @@ class backup_qtype_answersheet_plugin extends backup_qtype_extrafields_plugin {
                 'name',
                 'type',
                 'numoptions',
+                'questionpoints',
                 'usermodified',
                 'timecreated',
                 'timemodified',

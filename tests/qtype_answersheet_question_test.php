@@ -219,9 +219,9 @@ final class qtype_answersheet_question_test extends advanced_testcase {
             $dd->grade_response($fullresponse)
         );
         $oneresponse = $fullresponse;
-        $oneresponse[array_keys($fullresponse)[0]] = 'Z'; // Wrong
-        $oneresponse[array_keys($fullresponse)[1]] = 'Z'; // Wrong
-        $oneresponse[array_keys($fullresponse)[3]] = 'Z'; // Wrong
+        $oneresponse[array_keys($fullresponse)[0]] = 'Z'; // Wrong.
+        $oneresponse[array_keys($fullresponse)[1]] = 'Z'; // Wrong.
+        $oneresponse[array_keys($fullresponse)[3]] = 'Z'; // Wrong.
         $this->assertEquals(
             [0.5, question_state::$gradedpartial],
             $dd->grade_response($oneresponse)
@@ -233,6 +233,18 @@ final class qtype_answersheet_question_test extends advanced_testcase {
         $this->assertEquals(
             [0, question_state::$gradedwrong],
             $dd->grade_response($emptyresponse)
+        );
+        // Now we concentrate on module 2 and see if we get the double points (as for module 2 we have 2 answers 2 points each).
+        $oneresponsedoublepoints = $fullresponse;
+        $oneresponsedoublepoints[array_keys($fullresponse)[0]] = 0; // Wrong.
+        $oneresponsedoublepoints[array_keys($fullresponse)[1]] = 0; // Wrong.
+        $oneresponsedoublepoints[array_keys($fullresponse)[2]] = 'Z'; // Wrong.
+        $oneresponsedoublepoints[array_keys($fullresponse)[4]] = 'Z'; // Wrong.
+        $oneresponsedoublepoints[array_keys($fullresponse)[5]] = 'Z'; // Wrong.
+        // We should get 2 points out of 8 so 0.25.
+        $this->assertEquals(
+            [0.25, question_state::$gradedpartial],
+            $dd->grade_response($oneresponsedoublepoints)
         );
     }
 

@@ -67,6 +67,7 @@ class answersheet {
                 'modulename' => $module->get('name'),
                 'modulesortorder' => $module->get('sortorder'),
                 'numoptions' => $module->get('numoptions'),
+                'questionpoints' => $module->get('questionpoints'),
                 'type' => $module->get('type'),
                 'class' => $module->get_class(),
                 'indicator' => $module->get_indicator(),

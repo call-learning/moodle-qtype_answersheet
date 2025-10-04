@@ -238,7 +238,7 @@ final class qtype_answersheet_walkthrough_test extends \qbehaviour_walkthrough_t
 
         // Verify.
         $this->check_current_state(question_state::$gradedpartial);
-        $this->check_current_mark(5);
+        $this->check_current_mark(5.25); // 5/6 = 0.8333 * 6 = 5.25 (number of points for module 2 is 2 per question).
     }
 
     /**

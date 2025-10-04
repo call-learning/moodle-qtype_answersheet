@@ -33,6 +33,12 @@
     border: 1px solid #dee2e6;
     width: 300px;
 }
+.answersheet .module-input-small {
+    border-radius: 0;
+    border: 1px solid #dee2e6;
+    width: 3em;
+}
+
 
 .answersheet .module-type {
     border-radius: 0;

@@ -90,6 +90,11 @@ class answersheet_module extends persistent {
                 'message' => new lang_string('invaliddata', 'qtype_answersheet', 'sprogramme_module:type'),
                 'choices' => array_keys(self::TYPES),
             ],
+            'questionpoints' => [
+                'type' => PARAM_INT,
+                'message' => new lang_string('invaliddata', 'qtype_answersheet', 'sprogramme_module:questionpoints'),
+                'default' => 1,
+            ],
         ];
     }
 

@@ -394,6 +394,10 @@
                         <input name="numoptions" data-region="numoptions" type="hidden" value="{{numoptions}}"/>
                     </div>
                 </div>
+                <div class="input-group w-auto m-1">
+                    <label class="sr-only" for="questionpoints">{{#str}}questionpoints, qtype_answersheet{{/str}}</label>
+                    <input class="module-input-small" name="questionpoints" data-region="questionpoints" type="number" value="{{{questionpoints}}}"/>
+                </div>
                 <div class="plusminusbuttons m-1">
                     <button class="btn btn-icon icon-no-margin" data-id="{{id}}" data-action="moduleremoveoption">{{#pix}}e/delete, core, {{#str}}remove{{/str}}{{/pix}}</button>
                     <button class="btn btn-icon icon-no-margin" data-id="{{id}}" data-action="moduleaddoption">{{#pix}}e/insert, core, {{#str}}add{{/str}}{{/pix}}</button>

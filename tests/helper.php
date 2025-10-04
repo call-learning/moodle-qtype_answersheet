@@ -222,6 +222,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
                     'name' => 'Module 1',
                     'type' => 1,
                     'numoptions' => 4,
+                    'questionpoints' => 1,
                     'rows' =>
                         [
 
@@ -286,6 +287,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
                     'name' => 'Module 2',
                     'type' => 2,
                     'numoptions' => 8,
+                    'questionpoints' => 2,
                     'rows' =>
                         [
                             [
@@ -349,6 +351,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
                     'name' => 'Module 3',
                     'type' => 3,
                     'numoptions' => 4,
+                    'questionpoints' => 1,
                     'rows' =>
                         [
                             [
@@ -465,6 +468,7 @@ class qtype_answersheet_test_helper extends question_test_helper {
                 'sortorder' => $moduledef['sortorder'] ?? 0,
                 'name' => $moduledef['name'] ?? 'Module ' . ($index + 1),
                 'numoptions' => $moduledef['numoptions'] ?? 4,
+                'questionpoints' => $moduledef['questionpoints'] ?? 1,
                 'type' => $type,
             ]);
             $modules[$moduleid] = $newmodule;

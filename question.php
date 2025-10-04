@@ -314,15 +314,20 @@ class qtype_answersheet_question extends question_graded_automatically {
      */
     public function grade_response(array $responses) {
         $totalscore = 0.0;
+        $totalquestions = 0;
         foreach ($this->answers as $answerkey => $answerinfo) {
             $currentresponse = $this->get_response_value($answerkey, $responses);
+            $answersheet = $this->get_answersheets_from_answerid($answerinfo->id);
+            $module = $this->modules[$answersheet->get('moduleid')];
+            $questionpoints = $module->get('questionpoints') ?? 1;
+            $totalquestions += $questionpoints;
             if (is_null($currentresponse)) {
                 continue;
             }
             $isrightvalue = $this->is_same_answer($currentresponse, $answerinfo);
-            $totalscore += $isrightvalue;
+            $totalscore += $isrightvalue * $questionpoints;
         }
-        $fraction = $totalscore / count($this->answers);
+        $fraction = $totalscore / $totalquestions;
         return [$fraction, question_state::graded_state_for_fraction($fraction)];
     }
 
@@ -435,9 +440,14 @@ class qtype_answersheet_question extends question_graded_automatically {
      */
     public function compute_final_grade($responses, $totaltries) {
         $totalscore = 0;
+        $totalquestions = 0;
         foreach ($this->answers as $answerkey => $answerinfo) {
             $lastwrongindex = -1;
             $finallyright = false;
+            $answersheet = $this->get_answersheets_from_answerid($answerinfo->id);
+            $module = $this->modules[$answersheet->get('moduleid')];
+            $questionpoints = $module->get('questionpoints') ?? 1;
+            $totalquestions += $questionpoints;
             foreach ($responses as $i => $response) {
                 $currentresponse = $this->get_response_value($answerkey, $response);
                 if (!$this->is_same_answer($currentresponse, $answerinfo)) {
@@ -449,9 +459,9 @@ class qtype_answersheet_question extends question_graded_automatically {
             }
 
             if ($finallyright) {
-                $totalscore += max(0, 1 - ($lastwrongindex + 1) * $this->penalty);
+                $totalscore += max(0, $questionpoints - ($lastwrongindex + 1) * $this->penalty);
             }
         }
-        return $totalscore / count($this->answers);
+        return $totalscore / $totalquestions;
     }
 }

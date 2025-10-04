@@ -117,6 +117,10 @@ class Manager {
             if (moduletype) {
                 this.changeModule(moduletype);
             }
+            const questionpoints = e.target.closest('[data-region="questionpoints"]');
+            if (questionpoints) {
+                this.changeModule(questionpoints);
+            }
             this.setTableData();
         });
         // Listen to the arrow down and up keys to navigate to the next or previous row.
@@ -273,6 +277,7 @@ class Manager {
             cleanedModule.type = module.type;
             cleanedModule.numoptions = module.numoptions;
             cleanedModule.rows = cleanedRows;
+            cleanedModule.questionpoints = module.questionpoints;
             cleanedModules.push(cleanedModule);
         });
         return cleanedModules;
@@ -449,6 +454,7 @@ class Manager {
         const name = moduleElement.querySelector('[data-region="modulename"]').value;
         const type = moduleElement.querySelector('[data-region="moduletype"]').value;
         const numoptions = moduleElement.querySelector('[data-region="numoptions"]').value;
+        const questionpoints = moduleElement.querySelector('[data-region="questionpoints"]').value;
         Object.values(this.TYPES).forEach(type => {
             moduleElement.classList.remove(type);
         });
@@ -460,6 +466,7 @@ class Manager {
                 moduleObject.type = parseInt(type);
                 moduleObject.class = this.TYPES[type];
                 moduleObject.numoptions = parseInt(numoptions);
+                moduleObject.questionpoints = parseInt(questionpoints);
                 Object.values(this.TYPES).forEach(type => {
                     moduleObject[type] = false;
                 });
@@ -545,6 +552,7 @@ class Manager {
             modulename: ' ',
             type: 1,
             numoptions: numoptions,
+            questionpoints: 1,
             indicator: this.getIndicator(numoptions, 1),
             rows: [await this.createRow(1)],
         };

@@ -103,6 +103,7 @@ class qtype_answersheet extends question_type {
                 $mod->set('sortorder', $module['sortorder']);
                 $mod->set('questionid', $question->id);
                 $mod->set('numoptions', $module['numoptions']);
+                $mod->set('questionpoints', $module['questionpoints'] ?? 1);
                 $mod->save();
                 $moduleid = $mod->get('id');
                 $moduletype = answersheet_module::TYPES[$module['type']];
@@ -131,6 +132,7 @@ class qtype_answersheet extends question_type {
                         'name' => $answerinfo['name'] ?? '',
                         'moduletype' => $moduletype,
                         'numoptions' => $module['numoptions'],
+                        'questionpoints' => $module['questionpoints'] ?? 1,
                         'options' => !empty($answerinfo['options']) ? json_encode($answerinfo['options']) : '',
                         'answer' => $answerinfo['answer'] ?? '',
                         'feedback' => $answerinfo['feedback'] ?? '',

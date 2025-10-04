@@ -30,5 +30,20 @@
 function xmldb_qtype_answersheet_upgrade($oldversion) {
     global $CFG, $DB;
     $dbman = $DB->get_manager();
+    if ($oldversion < 2025100401) {
+
+        // Define field questionpoints to be added to qtype_answersheet_module.
+        $table = new xmldb_table('qtype_answersheet_module');
+        $field = new xmldb_field('questionpoints', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'type');
+
+        // Conditionally launch add field questionpoints.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $DB->set_field('qtype_answersheet_module', 'questionpoints', 1);
+        // Answersheet savepoint reached.
+        upgrade_plugin_savepoint(true, 2025100401, 'qtype', 'answersheet');
+    }
     return true;
 }
